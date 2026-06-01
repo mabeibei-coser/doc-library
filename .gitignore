@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Env / secrets
+.env
+.env.local
+.env*.local
+
+# Data (better-sqlite3 + 上传的文档附件/预览图)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/doc-attachments/
+data/doc-previews/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+.claude/
