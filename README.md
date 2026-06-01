@@ -38,4 +38,4 @@ env 见 `.env.local`：`ASG_MEMBER_SESSION_PASSWORD`（与中心一致）、`ASG
 
 ## 部署
 
-未上线（Z 系列）。上线后改 A 系列编号，配独立端口 + nginx 子路径 + 生产 env。
+已上线：https://h100.jsai100.com/a800/（端口 4003，nginx 子路径 `/a800/`）。生产 env 模板见 `deploy/env.production.example`，更新部署说"部署"走 tencent-deploy 流程。
