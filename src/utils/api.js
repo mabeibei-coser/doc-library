@@ -5,6 +5,9 @@
 const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api`;
 export const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4002/';
 
+// 预览图绝对地址：后端返回的 url 形如 /api/preview/xxx，前端要补上部署子路径（线上 /a800/）。
+export const previewSrc = (url) => `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url || ''}`;
+
 async function http(method, path, body) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
