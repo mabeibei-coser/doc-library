@@ -97,7 +97,7 @@ export default function App() {
             <Typography>没有找到匹配的文档</Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
             {items.map((doc) => (
               <DocumentCard key={doc.id} doc={doc} isVip={isVip} onNeedVip={() => setVipSnack(true)} />
             ))}
