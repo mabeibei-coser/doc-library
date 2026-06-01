@@ -67,7 +67,12 @@ function requireAdminSecret(req, res, next) {
 // ════════════ 前台：列表 / 分类 / 详情 ════════════
 
 app.get("/api/documents", (req, res) => {
-  const items = docs.listDocuments({ category: req.query.category, q: req.query.q });
+  const items = docs.listDocuments({
+    category: req.query.category,
+    subcategory: req.query.subcategory,
+    requiredTier: req.query.requiredTier,
+    q: req.query.q,
+  });
   res.json({ items, categories: docs.listCategories() });
 });
 
