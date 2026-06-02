@@ -67,13 +67,17 @@ function requireAdminSecret(req, res, next) {
 // ════════════ 前台：列表 / 分类 / 详情 ════════════
 
 app.get("/api/documents", (req, res) => {
+  // admin-hub 管理端调用时带 x-admin-secret（看全部分类）；浏览器公开前台没有，按 publicScope 隐藏其它业务域。
+  const isAdmin = !!ADMIN_SECRET && req.headers["x-admin-secret"] === ADMIN_SECRET;
+  const publicScope = !isAdmin;
   const items = docs.listDocuments({
     category: req.query.category,
     subcategory: req.query.subcategory,
     requiredTier: req.query.requiredTier,
     q: req.query.q,
+    publicScope,
   });
-  res.json({ items, categories: docs.listCategories() });
+  res.json({ items, categories: docs.listCategories({ publicScope }) });
 });
 
 app.get("/api/documents/:id", (req, res) => {

@@ -9,6 +9,7 @@ import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
 import { downloadDocument, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
+import OfficeInlinePreview from './OfficeInlinePreview'
 
 /**
  * 文档预览界面（弹窗）：标题 / 分类+免费VIP角标 / 完整简介 / 预览图（无图则占位）/ 下载。
@@ -33,6 +34,8 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const isOffice = fileType === 'word' || fileType === 'excel' || fileType === 'ppt'
   // 可内嵌渲染的类型（不计本身用户能不能下；服务端 inline 接口会再守门一次）
   const canInline = doc.hasAttachment && !locked && (fileType === 'image' || fileType === 'pdf' || fileType === 'video')
+  // Word/Excel 浏览器端渲染（PPT 无可靠浏览器渲染方案，仍走占位）
+  const canRenderOffice = doc.hasAttachment && !locked && (fileType === 'word' || fileType === 'excel')
 
   const handleDownload = async () => {
     if (downloading) return
@@ -172,6 +175,8 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
             component="video" src={inlineUrl(doc.id)} controls
             sx={{ width: '100%', maxHeight: 480, display: 'block', borderRadius: '12px', border: '1px solid', borderColor: 'divider', bgcolor: '#000' }}
           />
+        ) : canRenderOffice ? (
+          <OfficeInlinePreview doc={doc} fileType={fileType} />
         ) : isOffice ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0.75, py: 4.5, borderRadius: '16px', border: '1px dashed var(--ink-4)', bgcolor: 'var(--bg-mute)' }}>
             <InsertDriveFileOutlinedIcon sx={{ fontSize: 34, color: 'var(--ink-4)' }} />
