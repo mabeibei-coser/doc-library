@@ -44,6 +44,12 @@ export const fetchDocuments = (category, q) => {
   return http('GET', `/documents${qs ? '?' + qs : ''}`);
 };
 
+// 文档查看 +1（不去重；失败不影响用户操作，silently swallow）
+export const recordView = (id) => http('POST', `/documents/${id}/view`).catch(() => null);
+
+// 内嵌预览 URL（GET 走 cookie，后端守门同 download）
+export const inlineUrl = (id) => `${API_BASE}/documents/${id}/inline`;
+
 export function gotoCenterLogin() {
   const back = encodeURIComponent(window.location.href);
   window.location.href = `${CENTER_URL}?from=${back}`;

@@ -1,8 +1,8 @@
 import { Box, Typography } from '@mui/material';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { fileTypeMeta } from '../utils/fileType';
 
 /**
  * 文档行（紧凑列表样式，仿网盘）：左图标 / 右两行——第一行只放标题，
@@ -11,8 +11,12 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
  */
 export default function DocumentCard({ doc, onOpen }) {
   const vipDoc = doc.requiredTier === 'vip';
-  // 图标容器配色：VIP 金调 / 免费绿调
-  const icon = vipDoc ? { bg: 'var(--gold-soft)', fg: 'var(--gold)' } : { bg: 'var(--success-soft)', fg: 'var(--success)' };
+  // 图标按文件类型区分（Word/Excel/PPT/PDF/图片/视频/其它），各带专属图标与配色；
+  // 免费/VIP 档位改由下方文字标签表达，不再压在图标上。
+  // 解构出 Icon 后用大写命名渲染——MUI 的 icon 是 memo 包装组件，
+  // 直接写 `<ft.Icon>` 在 Vite automatic JSX runtime 下渲染时报错（具体原因迷），先解构规避。
+  const ft = fileTypeMeta(doc.attachmentMime, doc.attachmentName);
+  const FileIcon = ft.Icon;
 
   return (
     <Box
@@ -33,15 +37,15 @@ export default function DocumentCard({ doc, onOpen }) {
         '&:focus-visible': { bgcolor: 'var(--bg-mute)' },
       }}
     >
-      {/* 图标 */}
+      {/* 图标：按文件类型上色 */}
       <Box
         sx={{
           width: { xs: 42, sm: 46 }, height: { xs: 42, sm: 46 },
-          borderRadius: '12px', bgcolor: icon.bg,
+          borderRadius: '12px', bgcolor: ft.bg,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}
       >
-        <DescriptionOutlinedIcon sx={{ color: icon.fg, fontSize: { xs: 21, sm: 24 } }} />
+        <FileIcon titleAccess={ft.label} sx={{ color: ft.fg, fontSize: { xs: 21, sm: 24 } }} />
       </Box>
 
       {/* 内容区：第一行标题，第二行标签 */}
@@ -53,10 +57,25 @@ export default function DocumentCard({ doc, onOpen }) {
           {doc.title}
         </Typography>
 
-        {/* 标签：子类 · 档位 · 查看人数 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap', mt: 0.5, color: 'var(--ink-3)', fontSize: '0.76rem' }}>
+        {/* 标签：子类（小 chip）· 档位 · 查看次数 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 0.6, color: 'var(--ink-3)', fontSize: '0.76rem' }}>
           {doc.subcategory && (
-            <Typography component="span" sx={{ fontSize: 'inherit', color: 'var(--ink-2)' }}>{doc.subcategory}</Typography>
+            <Typography
+              component="span"
+              sx={{
+                display: 'inline-block',
+                px: 0.75, py: 0.15,
+                borderRadius: 'var(--r-xs)',
+                bgcolor: 'var(--accent-soft)',
+                color: 'var(--accent-ink)',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                lineHeight: 1.5,
+                letterSpacing: '0.01em',
+              }}
+            >
+              {doc.subcategory}
+            </Typography>
           )}
           {/* 档位 */}
           {vipDoc ? (

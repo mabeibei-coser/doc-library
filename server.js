@@ -82,6 +82,46 @@ app.get("/api/documents/:id", (req, res) => {
   res.json(doc);
 });
 
+// 查看计数：每次点开预览就 +1，不去重（1 个人点 5 次就 +5）。
+// 不强制登录——未登录也允许计数，phone 留空串。
+app.post("/api/documents/:id/view", async (req, res) => {
+  const doc = docs.getDocumentRaw(Number(req.params.id));
+  if (!doc || doc.status !== "published") return res.status(404).json({ error: "文档不存在" });
+  const session = await getSession(req, res);
+  docs.recordView(session?.phone || "", doc);
+  res.json({ ok: true });
+});
+
+// 文档内嵌预览：与 download 同守门（free=登录；vip=必须 VIP），但 Content-Disposition: inline。
+// 用于在弹窗里直接渲染 PDF / 图片 / 视频，未授权直接 403/401，前端按状态降级到占位。
+app.get(
+  "/api/documents/:id/inline",
+  requireSession(async (req, res) => {
+    const doc = docs.getDocumentRaw(Number(req.params.id));
+    if (!doc || doc.status !== "published") return res.status(404).json({ error: "文档不存在" });
+    if (!doc.attachment) return res.status(404).json({ error: "该文档暂无附件" });
+
+    if (doc.required_tier === "vip") {
+      const isVip = await fetchIsVip(req);
+      if (!isVip) {
+        return res.status(403).json({
+          error: "该文档为 VIP 会员专享",
+          needVip: true,
+          billingUrl: `${CENTER_BASE_URL}/`,
+        });
+      }
+    }
+
+    const filePath = path.join(ATTACH_DIR, doc.attachment.storedName);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "附件文件丢失" });
+
+    if (doc.attachment.mime) res.setHeader("Content-Type", doc.attachment.mime);
+    const encoded = encodeURIComponent(doc.attachment.originalName);
+    res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encoded}`);
+    res.sendFile(filePath);
+  })
+);
+
 // ════════════ 前台：下载（核心守门）════════════
 // free 档：登录即可；vip 档：必须 VIP（服务端二次校验，不只靠前端）。
 

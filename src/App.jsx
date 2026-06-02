@@ -5,14 +5,18 @@ import {
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import DocumentCard from './components/DocumentCard'
 import DocumentPreview from './components/DocumentPreview'
-import { fetchMe, fetchDocuments, gotoCenterLogin, CENTER_URL } from './utils/api'
+import { fetchMe, fetchDocuments, gotoCenterLogin, recordView, CENTER_URL } from './utils/api'
 
-// 手机号中间 4 位打码：18621933756 → 186****3756
-const maskPhone = (p) => (p ? String(p).replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : p)
+// 手机号打码：保留前 3 位、后 2 位，中间全部打码 → 18621933756 → 186******56
+const maskPhone = (p) => {
+  if (!p) return p
+  const s = String(p)
+  if (s.length <= 5) return s
+  return `${s.slice(0, 3)}${'*'.repeat(s.length - 5)}${s.slice(-2)}`
+}
 
 // 骨架行：匹配文档横条布局的占位 + 流光，替代通用转圈
 function DocSkeleton() {
@@ -73,6 +77,13 @@ export default function App() {
 
   const isVip = me?.isVip
 
+  // 点开文档：乐观把列表里该条 viewCount +1，然后异步通知后端记一次 view（失败也不回滚）
+  const handleOpenDoc = (d) => {
+    setSelectedDoc({ ...d, viewCount: (d.viewCount ?? 0) + 1 })
+    setItems((prev) => prev.map((x) => x.id === d.id ? { ...x, viewCount: (x.viewCount ?? 0) + 1 } : x))
+    recordView(d.id)
+  }
+
   return (
     <Box
       sx={{
@@ -82,26 +93,22 @@ export default function App() {
       }}
     >
       <Container maxWidth="md">
-        {/* 头部：左对齐 hero（eyebrow + 标题 + 副标题），用户状态浮右 */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap', mb: { xs: 2.5, md: 3.5 } }}>
-          <Box>
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, px: 1.25, py: 0.5, mb: 1.5, borderRadius: 'var(--r-sm)', bgcolor: 'var(--accent-soft)', color: 'var(--accent-ink)' }}>
-              <ShieldOutlinedIcon sx={{ fontSize: 15 }} />
-              <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.01em' }}>安全隐患域 · 文档中心</Typography>
-            </Box>
+        {/* 头部：居中标题 + 副标题；用户状态绝对定位右上角 */}
+        <Box sx={{ position: 'relative', mb: { xs: 2.5, md: 3.5 } }}>
+          <Box sx={{ textAlign: 'center', px: { xs: 6, sm: 0 } }}>
             <Typography
               component="h1"
-              sx={{ fontSize: { xs: '1.95rem', md: '2.5rem' }, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1.1 }}
+              sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
             >
-              安防文档库
+              安全资料库
             </Typography>
-            <Typography sx={{ mt: 1.25, color: 'text.secondary', fontSize: { xs: '0.9rem', md: '1rem' }, maxWidth: 480, lineHeight: 1.6 }}>
+            <Typography sx={{ mt: 1, color: 'text.secondary', fontSize: { xs: '0.82rem', md: '0.9rem' }, lineHeight: 1.6, maxWidth: 520, mx: 'auto' }}>
               安全规范、应急预案、检查表模板，一处取齐。免费文档登录即下，VIP 解锁全部。
             </Typography>
           </Box>
 
-          {/* 用户状态 */}
-          <Box sx={{ flexShrink: 0 }}>
+          {/* 用户状态：绝对定位右上 */}
+          <Box sx={{ position: 'absolute', right: 0, top: 0 }}>
             {meReady && me ? (
               <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, bgcolor: '#fff', border: '1px solid', borderColor: 'divider', borderRadius: 'var(--r-md)', pl: 1.5, pr: 0.5, py: 0.5, boxShadow: 'var(--shadow-sm)' }}>
                 {isVip && (
@@ -196,7 +203,7 @@ export default function App() {
                   animationDelay: `${Math.min(i, 8) * 55}ms`,
                 }}
               >
-                <DocumentCard doc={doc} onOpen={(d) => setSelectedDoc(d)} />
+                <DocumentCard doc={doc} onOpen={handleOpenDoc} />
               </Box>
             ))}
           </Box>
