@@ -11,6 +11,9 @@ import DocumentCard from './components/DocumentCard'
 import DocumentPreview from './components/DocumentPreview'
 import { fetchMe, fetchDocuments, gotoCenterLogin, CENTER_URL } from './utils/api'
 
+// 手机号中间 4 位打码：18621933756 → 186****3756
+const maskPhone = (p) => (p ? String(p).replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : p)
+
 // 骨架行：匹配文档横条布局的占位 + 流光，替代通用转圈
 function DocSkeleton() {
   const shimmer = {
@@ -107,7 +110,7 @@ export default function App() {
                     sx={{ height: 22, fontSize: '0.7rem', fontWeight: 800, bgcolor: 'var(--gold-soft)', color: 'var(--gold-ink)', border: '1px solid rgba(176,138,62,0.35)' }}
                   />
                 )}
-                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>{me.phone}</Typography>
+                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>{maskPhone(me.phone)}</Typography>
                 <Tooltip title="会员中心">
                   <IconButton size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ color: 'primary.main' }}>
                     <WorkspacePremiumIcon sx={{ fontSize: 18 }} />
