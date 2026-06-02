@@ -2,33 +2,40 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider, createTheme, CssBaseline, GlobalStyles } from '@mui/material'
 import App from './App.jsx'
+import './styles/index.css'
 
-// 清爽浅色 · 亲和友好：明亮中性基底 + 单一亲和蓝强调，免费=柔绿 / VIP=柔金两套语义色。
+// MUI theme：与 ASG100 会员中心同一套设计语言 v2（暖白纸感 + 深青绿 + 墨黑 + VIP 古金）。
+// 免费=克制绿 / VIP=古金两套语义色，颜色与 src/styles/index.css 的 CSS var 保持同步。
 const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#2563eb', dark: '#1d4ed8', light: '#eff6ff', contrastText: '#fff' },
-    success: { main: '#10b981', dark: '#047857', light: '#ecfdf5' },
-    warning: { main: '#f59e0b', dark: '#b45309', light: '#fffbeb' },
-    background: { default: '#f6f8fc', paper: '#ffffff' },
-    text: { primary: '#0f172a', secondary: '#475569' },
-    divider: 'rgba(226, 232, 240, 0.9)',
+    primary: { main: '#0f766e', dark: '#0d6660', light: '#ccfbf1', contrastText: '#ffffff' },
+    secondary: { main: '#525866' },
+    success: { main: '#2f8559', dark: '#1f6344', light: '#e7f3ec', contrastText: '#ffffff' },
+    warning: { main: '#b08a3e', dark: '#8a6c2f', light: '#fdf6e4', contrastText: '#ffffff' },
+    error: { main: '#b8472d', light: '#fce8e1', contrastText: '#ffffff' },
+    background: { default: '#fafaf7', paper: '#ffffff' },
+    text: { primary: '#0f1419', secondary: '#525866', disabled: '#9098a5' },
+    divider: '#e6e6e1',
   },
-  shape: { borderRadius: 12 },
   typography: {
-    // 中文为主：保留系统中文字体栈（去掉 Inter），靠字重/字距做质感，不引外部 web font。
+    // 与 ASG100 同一字体栈：Inter Tight 打底，中文回落 PingFang / YaHei，不引外部 web font。
     fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Segoe UI', system-ui, 'Noto Sans SC', sans-serif",
-    h4: { fontWeight: 800, letterSpacing: '-0.02em' },
-    h6: { fontWeight: 700 },
-    button: { fontWeight: 700 },
+      "'Inter Tight', 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif",
+    h4: { fontWeight: 700, letterSpacing: '-0.025em' },
+    h5: { fontWeight: 650, letterSpacing: '-0.018em' },
+    h6: { fontWeight: 600, letterSpacing: '-0.012em' },
+    button: { fontWeight: 600 },
   },
   components: {
+    MuiOutlinedInput: {
+      styleOverrides: { root: { borderRadius: 8 } },
+    },
     MuiButton: {
-      styleOverrides: { root: { borderRadius: 12, textTransform: 'none', fontWeight: 700, boxShadow: 'none' } },
+      styleOverrides: { root: { borderRadius: 8, textTransform: 'none', fontWeight: 600, boxShadow: 'none' } },
     },
     MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
-    MuiChip: { styleOverrides: { root: { borderRadius: 999, fontWeight: 600 } } },
+    MuiChip: { styleOverrides: { root: { borderRadius: 6 } } },
   },
 })
 

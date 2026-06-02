@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Container, Box, Typography, TextField, InputAdornment, Chip,
-  Snackbar, Alert, Button, IconButton, Tooltip,
+  Button, IconButton, Tooltip,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
@@ -14,7 +14,7 @@ import { fetchMe, fetchDocuments, gotoCenterLogin, CENTER_URL } from './utils/ap
 // 骨架行：匹配文档横条布局的占位 + 流光，替代通用转圈
 function DocSkeleton() {
   const shimmer = {
-    position: 'relative', overflow: 'hidden', bgcolor: '#eef2f7',
+    position: 'relative', overflow: 'hidden', bgcolor: 'var(--bg-mute)',
     '&::after': {
       content: '""', position: 'absolute', inset: 0,
       background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent)',
@@ -22,15 +22,24 @@ function DocSkeleton() {
     },
   }
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: { xs: 1.75, sm: 2.25 }, bgcolor: '#fff', borderRadius: '20px', border: '1px solid', borderColor: 'divider' }}>
-      <Box sx={{ ...shimmer, width: 50, height: 50, borderRadius: '14px', flexShrink: 0 }} />
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75, px: { xs: 1.75, sm: 2.25 }, py: { xs: 1.5, sm: 1.75 } }}>
+      <Box sx={{ ...shimmer, width: 46, height: 46, borderRadius: '12px', flexShrink: 0 }} />
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Box sx={{ ...shimmer, width: '52%', height: 13, borderRadius: '6px' }} />
-        <Box sx={{ ...shimmer, width: '78%', height: 10, borderRadius: '6px' }} />
+        <Box sx={{ ...shimmer, width: '38%', height: 10, borderRadius: '6px' }} />
       </Box>
-      <Box sx={{ ...shimmer, width: 120, height: 40, borderRadius: '12px', flexShrink: 0, display: { xs: 'none', sm: 'block' } }} />
     </Box>
   )
+}
+
+// 列表外壳：白底圆角 + 细描边 + 柔和投影，行与行之间用细分隔线，整体无空隙（仿网盘紧凑列表）
+const listSurfaceSx = {
+  bgcolor: '#fff',
+  borderRadius: 'var(--r-lg)',
+  border: '1px solid',
+  borderColor: 'divider',
+  overflow: 'hidden',
+  boxShadow: '0 10px 30px -18px rgba(15, 118, 110, 0.16)',
 }
 
 export default function App() {
@@ -41,7 +50,6 @@ export default function App() {
   const [category, setCategory] = useState('')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
-  const [vipSnack, setVipSnack] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState(null)
 
   useEffect(() => {
@@ -66,7 +74,7 @@ export default function App() {
     <Box
       sx={{
         minHeight: '100dvh',
-        background: 'radial-gradient(1100px 520px at 50% -180px, rgba(37,99,235,0.08), transparent 70%), #f6f8fc',
+        background: 'radial-gradient(1100px 520px at 50% -180px, rgba(15,118,110,0.07), transparent 70%)',
         py: { xs: 3, md: 5 },
       }}
     >
@@ -74,13 +82,13 @@ export default function App() {
         {/* 头部：左对齐 hero（eyebrow + 标题 + 副标题），用户状态浮右 */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap', mb: { xs: 2.5, md: 3.5 } }}>
           <Box>
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, px: 1.25, py: 0.5, mb: 1.5, borderRadius: '999px', bgcolor: 'rgba(37,99,235,0.08)', color: 'primary.dark' }}>
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, px: 1.25, py: 0.5, mb: 1.5, borderRadius: 'var(--r-sm)', bgcolor: 'var(--accent-soft)', color: 'var(--accent-ink)' }}>
               <ShieldOutlinedIcon sx={{ fontSize: 15 }} />
               <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.01em' }}>安全隐患域 · 文档中心</Typography>
             </Box>
             <Typography
               component="h1"
-              sx={{ fontSize: { xs: '1.95rem', md: '2.5rem' }, fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', lineHeight: 1.1 }}
+              sx={{ fontSize: { xs: '1.95rem', md: '2.5rem' }, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)', lineHeight: 1.1 }}
             >
               安防文档库
             </Typography>
@@ -92,11 +100,11 @@ export default function App() {
           {/* 用户状态 */}
           <Box sx={{ flexShrink: 0 }}>
             {meReady && me ? (
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, bgcolor: '#fff', border: '1px solid', borderColor: 'divider', borderRadius: '999px', pl: 1.5, pr: 0.5, py: 0.5, boxShadow: '0 6px 18px -10px rgba(15,23,42,0.25)' }}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, bgcolor: '#fff', border: '1px solid', borderColor: 'divider', borderRadius: 'var(--r-md)', pl: 1.5, pr: 0.5, py: 0.5, boxShadow: 'var(--shadow-sm)' }}>
                 {isVip && (
                   <Chip
-                    icon={<WorkspacePremiumIcon sx={{ fontSize: 14, color: '#d97706 !important' }} />} label="VIP" size="small"
-                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 800, bgcolor: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}
+                    icon={<WorkspacePremiumIcon sx={{ fontSize: 14, color: 'var(--gold) !important' }} />} label="VIP" size="small"
+                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 800, bgcolor: 'var(--gold-soft)', color: 'var(--gold-ink)', border: '1px solid rgba(176,138,62,0.35)' }}
                   />
                 )}
                 <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>{me.phone}</Typography>
@@ -109,7 +117,7 @@ export default function App() {
             ) : meReady ? (
               <Button
                 variant="outlined" size="small" onClick={gotoCenterLogin}
-                sx={{ borderColor: 'divider', color: 'primary.main', borderRadius: '999px', px: 2, py: 0.6, bgcolor: '#fff', '&:hover': { borderColor: 'primary.main', bgcolor: '#fff' } }}
+                sx={{ borderColor: 'divider', color: 'primary.main', borderRadius: 'var(--r-sm)', px: 2, py: 0.6, bgcolor: '#fff', '&:hover': { borderColor: 'primary.main', bgcolor: '#fff' } }}
               >
                 登录
               </Button>
@@ -124,14 +132,14 @@ export default function App() {
           sx={{
             mb: 2,
             '& .MuiOutlinedInput-root': {
-              bgcolor: '#fff', borderRadius: '16px', fontSize: '0.95rem',
-              boxShadow: '0 8px 24px -14px rgba(15,23,42,0.2)',
+              bgcolor: '#fff', borderRadius: 'var(--r-md)', fontSize: '0.95rem',
+              boxShadow: '0 8px 24px -14px rgba(15,118,110,0.18)',
               '& fieldset': { borderColor: 'divider' },
-              '&:hover fieldset': { borderColor: '#cbd5e1' },
+              '&:hover fieldset': { borderColor: 'var(--line-strong)' },
               '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: 2 },
             },
           }}
-          slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: '#94a3b8' }} /></InputAdornment> } }}
+          slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'var(--ink-3)' }} /></InputAdornment> } }}
         />
 
         {/* 分类筛选 */}
@@ -147,8 +155,8 @@ export default function App() {
                     border: '1px solid',
                     transition: 'all .2s cubic-bezier(0.16,1,0.3,1)',
                     ...(active
-                      ? { bgcolor: 'primary.main', color: '#fff', borderColor: 'primary.main', boxShadow: '0 6px 16px -8px rgba(37,99,235,0.6)' }
-                      : { bgcolor: '#fff', color: 'text.secondary', borderColor: 'divider', '&:hover': { borderColor: '#cbd5e1', transform: 'translateY(-1px)' } }),
+                      ? { bgcolor: 'primary.main', color: '#fff', borderColor: 'primary.main', boxShadow: '0 6px 16px -8px rgba(15,118,110,0.5)' }
+                      : { bgcolor: '#fff', color: 'text.secondary', borderColor: 'divider', '&:hover': { borderColor: 'var(--line-strong)', transform: 'translateY(-1px)' } }),
                   }}
                 />
               )
@@ -158,29 +166,34 @@ export default function App() {
 
         {/* 文档列表 / 骨架 / 空状态 */}
         {loading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {[0, 1, 2, 3].map((i) => <DocSkeleton key={i} />)}
+          <Box sx={listSurfaceSx}>
+            {[0, 1, 2, 3].map((i) => (
+              <Box key={i} sx={{ borderTop: i === 0 ? 'none' : '1px solid', borderColor: 'var(--line)' }}>
+                <DocSkeleton />
+              </Box>
+            ))}
           </Box>
         ) : items.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: { xs: 6, md: 9 } }}>
-            <Box sx={{ width: 72, height: 72, borderRadius: '50%', bgcolor: 'rgba(37,99,235,0.08)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+            <Box sx={{ width: 72, height: 72, borderRadius: '50%', bgcolor: 'var(--accent-soft)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
               <FolderOpenOutlinedIcon sx={{ fontSize: 34, color: 'primary.main' }} />
             </Box>
-            <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 0.5 }}>没有找到匹配的文档</Typography>
+            <Typography sx={{ fontWeight: 700, color: 'var(--ink)', mb: 0.5 }}>没有找到匹配的文档</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>换个关键词，或点上方「全部」看看所有文档</Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={listSurfaceSx}>
             {items.map((doc, i) => (
               <Box
                 key={doc.id}
-                sx={{ animation: 'docFadeUp .5s cubic-bezier(0.16,1,0.3,1) both', animationDelay: `${Math.min(i, 8) * 55}ms` }}
+                sx={{
+                  borderTop: i === 0 ? 'none' : '1px solid',
+                  borderColor: 'var(--line)',
+                  animation: 'docFadeUp .5s cubic-bezier(0.16,1,0.3,1) both',
+                  animationDelay: `${Math.min(i, 8) * 55}ms`,
+                }}
               >
-                <DocumentCard
-                  doc={doc} isVip={isVip}
-                  onOpen={(d) => setSelectedDoc(d)}
-                  onNeedVip={() => setVipSnack(true)}
-                />
+                <DocumentCard doc={doc} onOpen={(d) => setSelectedDoc(d)} />
               </Box>
             ))}
           </Box>
@@ -194,24 +207,6 @@ export default function App() {
         onClose={() => setSelectedDoc(null)}
         isVip={isVip}
       />
-
-      <Snackbar
-        open={vipSnack} autoHideDuration={5000} onClose={() => setVipSnack(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity="warning" variant="filled" onClose={() => setVipSnack(false)}
-          icon={<WorkspacePremiumIcon fontSize="inherit" />}
-          sx={{ borderRadius: '14px', alignItems: 'center', bgcolor: '#b45309', color: '#fff', fontWeight: 600, boxShadow: '0 14px 34px -12px rgba(180,83,9,0.55)' }}
-          action={
-            <Button color="inherit" size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ fontWeight: 800, borderRadius: '999px' }}>
-              去开通
-            </Button>
-          }
-        >
-          该文档为 VIP 会员专享
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

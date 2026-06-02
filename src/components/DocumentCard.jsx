@@ -1,40 +1,18 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, Chip, CircularProgress } from '@mui/material';
-import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { Box, Typography } from '@mui/material';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
-import { downloadDocument, gotoCenterLogin } from '../utils/api';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 /**
- * 文档行：白底圆角横条——左彩色图标 / 中标题+角标+说明 / 右下载按钮。
- * 点卡片任意处 → 打开预览（onOpen）；右侧下载按钮 stopPropagation，可直接下载。
- * 免费档绿调、VIP 档金调；hover 上浮、按下回弹的触感反馈。
+ * 文档行（紧凑列表样式，仿网盘）：左图标 / 右两行——第一行只放标题，
+ * 第二行放标签：子类 · 档位（免费/VIP）· 查看人数。
+ * 整行可点 → 打开预览（onOpen）。下载动作移到预览界面，列表行不再带按钮。
  */
-export default function DocumentCard({ doc, isVip, onNeedVip, onOpen }) {
-  const [downloading, setDownloading] = useState(false);
-  const [err, setErr] = useState(null);
+export default function DocumentCard({ doc, onOpen }) {
   const vipDoc = doc.requiredTier === 'vip';
-  const locked = vipDoc && !isVip;
-
-  const handleDownload = async () => {
-    if (downloading) return;
-    setErr(null);
-    setDownloading(true);
-    try {
-      await downloadDocument(doc);
-    } catch (e) {
-      if (e.status === 401) { gotoCenterLogin(); return; }
-      if (e.status === 403 || e.needVip) { onNeedVip?.(); return; }
-      setErr(e.message || '下载失败');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   // 图标容器配色：VIP 金调 / 免费绿调
-  const icon = vipDoc ? { bg: '#fffbeb', fg: '#d97706' } : { bg: '#ecfdf5', fg: '#059669' };
+  const icon = vipDoc ? { bg: 'var(--gold-soft)', fg: 'var(--gold)' } : { bg: 'var(--success-soft)', fg: 'var(--success)' };
 
   return (
     <Box
@@ -45,93 +23,60 @@ export default function DocumentCard({ doc, isVip, onNeedVip, onOpen }) {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: { xs: 1.5, sm: 2 },
-        p: { xs: 1.75, sm: 2.25 },
-        bgcolor: '#fff',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: '20px',
-        boxShadow: '0 10px 30px -18px rgba(15, 23, 42, 0.18)',
+        gap: { xs: 1.5, sm: 1.75 },
+        px: { xs: 1.75, sm: 2.25 },
+        py: { xs: 1.5, sm: 1.75 },
         cursor: 'pointer',
         outline: 'none',
-        transition: 'transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s, border-color .25s',
-        '&:hover': {
-          transform: 'translateY(-3px)',
-          boxShadow: '0 18px 40px -16px rgba(37, 99, 235, 0.28)',
-          borderColor: 'rgba(37, 99, 235, 0.35)',
-        },
-        '&:focus-visible': {
-          borderColor: 'primary.main',
-          boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.25)',
-        },
+        transition: 'background-color .18s',
+        '&:hover': { bgcolor: 'var(--bg-mute)' },
+        '&:focus-visible': { bgcolor: 'var(--bg-mute)' },
       }}
     >
       {/* 图标 */}
       <Box
         sx={{
-          width: { xs: 44, sm: 50 }, height: { xs: 44, sm: 50 },
-          borderRadius: '14px', bgcolor: icon.bg,
+          width: { xs: 42, sm: 46 }, height: { xs: 42, sm: 46 },
+          borderRadius: '12px', bgcolor: icon.bg,
           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}
       >
-        <DescriptionOutlinedIcon sx={{ color: icon.fg, fontSize: { xs: 22, sm: 26 } }} />
+        <DescriptionOutlinedIcon sx={{ color: icon.fg, fontSize: { xs: 21, sm: 24 } }} />
       </Box>
 
-      {/* 内容区：标题+分类一行，角标+说明一行 */}
+      {/* 内容区：第一行标题，第二行标签 */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mb: 0.5 }}>
-          <Typography sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '0.92rem', sm: '1rem' }, lineHeight: 1.3 }}>
-            {doc.title}
-          </Typography>
-          {doc.category && (
-            <Chip label={doc.category} size="small" sx={{ height: 20, fontSize: '0.66rem', bgcolor: '#f1f5f9', color: '#64748b' }} />
-          )}
-        </Box>
+        <Typography
+          noWrap
+          sx={{ fontWeight: 600, color: 'var(--ink)', fontSize: { xs: '0.92rem', sm: '0.98rem' }, lineHeight: 1.35 }}
+        >
+          {doc.title}
+        </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        {/* 标签：子类 · 档位 · 查看人数 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap', mt: 0.5, color: 'var(--ink-3)', fontSize: '0.76rem' }}>
+          {doc.subcategory && (
+            <Typography component="span" sx={{ fontSize: 'inherit', color: 'var(--ink-2)' }}>{doc.subcategory}</Typography>
+          )}
+          {/* 档位 */}
           {vipDoc ? (
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 0.9, py: 0.3, borderRadius: '999px', bgcolor: '#fffbeb', border: '1px solid #fde68a' }}>
-              <WorkspacePremiumIcon sx={{ fontSize: 13, color: '#d97706' }} />
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#b45309', lineHeight: 1 }}>VIP 专享</Typography>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'var(--gold-ink)' }}>
+              <WorkspacePremiumIcon sx={{ fontSize: 13 }} />
+              <Typography component="span" sx={{ fontSize: 'inherit', fontWeight: 700 }}>VIP</Typography>
             </Box>
           ) : (
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 0.9, py: 0.3, borderRadius: '999px', bgcolor: '#ecfdf5', border: '1px solid #a7f3d0' }}>
-              <TaskAltRoundedIcon sx={{ fontSize: 13, color: '#059669' }} />
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, color: '#047857', lineHeight: 1 }}>免费</Typography>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'var(--success)' }}>
+              <TaskAltRoundedIcon sx={{ fontSize: 13 }} />
+              <Typography component="span" sx={{ fontSize: 'inherit', fontWeight: 700 }}>免费</Typography>
             </Box>
           )}
-          {doc.description && (
-            <Typography noWrap sx={{ color: '#94a3b8', fontSize: '0.8rem', flex: 1, minWidth: 0 }}>
-              {doc.description}
-            </Typography>
-          )}
+          {/* 查看人数 */}
+          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3 }}>
+            <VisibilityOutlinedIcon sx={{ fontSize: 13 }} />
+            <Typography component="span" sx={{ fontSize: 'inherit' }}>{doc.viewCount ?? 0}</Typography>
+          </Box>
         </Box>
-        {err && <Typography variant="caption" sx={{ color: '#dc2626', display: 'block', mt: 0.5 }}>{err}</Typography>}
       </Box>
-
-      {/* 右侧下载按钮（阻止冒泡，避免触发预览） */}
-      <Button
-        variant={locked ? 'outlined' : 'contained'}
-        disableElevation
-        disabled={downloading || !doc.hasAttachment}
-        startIcon={downloading ? <CircularProgress size={15} color="inherit" /> : (locked ? <LockOutlinedIcon /> : <DownloadRoundedIcon />)}
-        onClick={(e) => { e.stopPropagation(); handleDownload(); }}
-        sx={{
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-          borderRadius: '12px',
-          px: { xs: 1.5, sm: 2 }, py: 1,
-          minWidth: { xs: 'auto', sm: 128 },
-          transition: 'transform .15s, box-shadow .25s, background-color .2s',
-          '&:active': { transform: 'scale(0.97)' },
-          ...(locked
-            ? { color: '#b45309', borderColor: '#fde68a', bgcolor: '#fffbeb', '&:hover': { borderColor: '#fbbf24', bgcolor: '#fef3c7' } }
-            : { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark', boxShadow: '0 10px 22px -10px rgba(37, 99, 235, 0.7)' } }),
-          '&.Mui-disabled': { bgcolor: '#f1f5f9', color: '#cbd5e1' },
-        }}
-      >
-        {!doc.hasAttachment ? '暂无附件' : downloading ? '下载中' : (locked ? '开通 VIP' : '下载')}
-      </Button>
     </Box>
   );
 }
