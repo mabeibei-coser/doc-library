@@ -1,7 +1,7 @@
 {
   "name": "doc-library",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "description": "安防文档库 - 安全隐患域独立积木，文档分免费/VIP档，下载刷卡问会员中心",
   "scripts": {
