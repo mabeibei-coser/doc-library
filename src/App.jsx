@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import {
   Container, Box, Typography, TextField, InputAdornment,
-  Button,
+  Button, Chip, IconButton, Tooltip,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import DocumentCard from './components/DocumentCard'
 import DocumentPreview from './components/DocumentPreview'
+import BottomNav from './components/BottomNav'
 import { fetchMe, fetchDocuments, gotoCenterLogin, recordView, CENTER_URL } from './utils/api'
 
 // 手机号打码：保留前 3 位、后 2 位，中间全部打码 → 18621933756 → 186******56
@@ -84,44 +85,48 @@ export default function App() {
     recordView(d.id)
   }
 
+  // 悬浮底部导航：首页 = 回本应用首页（清搜索 + 清分类 + 回到顶部）；记录 = 会员中心识别历史；我的 = 去会员中心
+  const goHome = () => {
+    setQ('')
+    setCategory('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const goHistory = () => { window.location.href = `${CENTER_URL}?view=history` }
+  const goMine = () => { window.location.href = CENTER_URL }
+
   return (
     <Box
       sx={{
         minHeight: '100dvh',
         background: 'radial-gradient(1100px 520px at 50% -180px, rgba(15,118,110,0.07), transparent 70%)',
-        py: { xs: 3, md: 5 },
+        pt: { xs: 3, md: 5 },
+        pb: { xs: 11, md: 12 }, // 给悬浮底部导航留位置
       }}
     >
       <Container maxWidth="md">
-        {/* 头部：第 1 行用户状态条右对齐（VIP 黄 / 普通绿，单一图标在左），第 2 行标题居中 */}
+        {/* 头部：第 1 行用户状态条右对齐（VIP chip + 手机号，与 A600 一致），第 2 行标题居中 */}
         <Box sx={{ mb: { xs: 2.5, md: 3.5 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', minHeight: 32, mb: { xs: 1.25, md: 1.5 } }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.75, minHeight: 32, mb: { xs: 1.25, md: 1.5 } }}>
             {meReady && me ? (
-              <Box
-                role="button"
-                tabIndex={0}
-                onClick={() => { window.location.href = CENTER_URL }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href = CENTER_URL } }}
-                aria-label="会员中心"
-                sx={{
-                  display: 'inline-flex', alignItems: 'center', gap: 0.75,
-                  bgcolor: isVip ? 'var(--gold-soft)' : 'var(--success-soft)',
-                  color: isVip ? 'var(--gold-ink)' : 'var(--success-ink)',
-                  border: '1px solid',
-                  borderColor: isVip ? 'rgba(176,138,62,0.35)' : 'rgba(47,133,89,0.30)',
-                  borderRadius: 'var(--r-md)', px: 1.25, py: 0.5,
-                  cursor: 'pointer', outline: 'none',
-                  transition: 'background-color .15s, box-shadow .15s',
-                  '&:hover': { bgcolor: isVip ? '#fbedc4' : '#d6ebdd' },
-                  '&:focus-visible': { boxShadow: 'var(--shadow-focus)' },
-                }}
-              >
-                <WorkspacePremiumIcon sx={{ fontSize: 16, color: isVip ? 'var(--gold)' : 'var(--success)' }} />
+              <>
                 {isVip && (
-                  <Typography component="span" sx={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>VIP</Typography>
+                  <Chip
+                    icon={<WorkspacePremiumIcon sx={{ fontSize: 14, color: 'var(--gold) !important' }} />}
+                    label="VIP" size="small"
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'var(--gold-soft)', color: 'var(--gold-ink)' }}
+                  />
                 )}
-                <Typography component="span" sx={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1 }}>{maskPhone(me.phone)}</Typography>
-              </Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                  {maskPhone(me.phone)}
+                </Typography>
+                {!isVip && (
+                  <Tooltip title="会员中心">
+                    <IconButton size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ color: 'var(--ink-3)', p: 0.5 }}>
+                      <WorkspacePremiumIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
             ) : meReady ? (
               <Button
                 variant="outlined" size="small" onClick={gotoCenterLogin}
@@ -249,6 +254,8 @@ export default function App() {
         onClose={() => setSelectedDoc(null)}
         isVip={isVip}
       />
+
+      <BottomNav onHome={goHome} onHistory={goHistory} onMine={goMine} />
     </Box>
   )
 }
