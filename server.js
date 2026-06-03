@@ -13,6 +13,7 @@ const { default: multer } = await import("multer");
 const { getSession } = await import("./lib/session.js");
 const { getDb } = await import("./lib/db.js");
 const docs = await import("./lib/documents.js");
+const { generatePreviews } = await import("./lib/previewGenerator.js");
 
 const PORT = Number(process.env.DOC_API_PORT || process.env.PORT) || 4003;
 const CENTER_BASE_URL = process.env.ASG_CENTER_BASE_URL || "http://localhost:4002";
@@ -172,12 +173,14 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
 });
 
-// 上传附件 + 预览图，返回元信息（前端拼进 createDocument 的 attachment/preview）
+// 上传附件 + 预览图，返回元信息（前端拼进 createDocument 的 attachment/preview）。
+// admin 没手动上传 preview 时，对 PDF/Word/PPT 自动截前 3 页当兜底——admin 显式传了就尊重 admin 的。
+// 自动生成失败/不支持的类型 → preview 为空，不影响附件上传成功。
 app.post(
   "/api/admin/upload",
   requireAdminSecret,
   upload.fields([{ name: "attachment", maxCount: 1 }, { name: "preview", maxCount: 5 }]),
-  (req, res) => {
+  async (req, res) => {
     const result = {};
     const att = req.files?.attachment?.[0];
     if (att) {
@@ -190,6 +193,10 @@ app.post(
     }
     if (req.files?.preview?.length) {
       result.preview = req.files.preview.map((f) => ({ storedName: f.filename, url: `/api/preview/${f.filename}` }));
+    } else if (att) {
+      // 自动生成预览：同步等结果（admin 接受 2-5s 延迟换用户端永远秒开）。
+      const auto = await generatePreviews(path.join(ATTACH_DIR, att.filename), result.attachment, PREVIEW_DIR);
+      if (auto.length) result.preview = auto;
     }
     res.json({ ok: true, ...result });
   }
