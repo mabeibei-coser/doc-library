@@ -37,18 +37,13 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   // Word/Excel 浏览器端渲染（PPT 无可靠浏览器渲染方案，仍走占位）
   const canRenderOffice = doc.hasAttachment && !locked && (fileType === 'word' || fileType === 'excel')
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (downloading) return
+    if (locked) { setNeedVip(true); return }   // 非 VIP 看 VIP 档：本地短路，不发请求
     setErr(null); setNeedVip(false); setDownloading(true)
-    try {
-      await downloadDocument(doc)
-    } catch (e) {
-      if (e.status === 401) { gotoCenterLogin(); return }
-      if (e.status === 403 || e.needVip) { setNeedVip(true); return }
-      setErr(e.message || '下载失败')
-    } finally {
-      setDownloading(false)
-    }
+    downloadDocument(doc)                       // 同步：跳转真实 URL 触发下载
+    // 浏览器跳走前给个短暂反馈；attachment 头让导航实际不离开当前页
+    setTimeout(() => setDownloading(false), 1500)
   }
 
   return (

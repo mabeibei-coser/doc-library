@@ -56,35 +56,14 @@ export function gotoCenterLogin() {
 }
 
 /**
- * 下载文档：直接打下载链接（带 cookie）。后端校验 free/vip。
- * 非 VIP 下 vip 档会返 403 JSON——所以先用 fetch 探一次，403 就引导开通，否则真下载。
+ * 下载文档：跳转真实 HTTP URL，让浏览器原生处理下载。
+ * 之前 fetch+blob URL 在微信 WebView 不兼容（blob 跨进程失效）；
+ * 现在直跳 URL，服务端 Content-Disposition: attachment 触发下载。
+ * 鉴权改由前端按钮三态预判 + onClick locked 本地短路，不再做 fetch 预检。
  */
-export async function downloadDocument(doc) {
+export function downloadDocument(doc) {
   const url = `${API_BASE}/documents/${doc.id}/download`;
-  const res = await fetch(url, { credentials: 'include' });
-  if (res.status === 403) {
-    const data = await res.json().catch(() => ({}));
-    const err = new Error(data.error || '需要 VIP');
-    err.status = 403;
-    err.needVip = true;
-    throw err;
-  }
-  if (res.status === 401) {
-    const err = new Error('请先登录');
-    err.status = 401;
-    throw err;
-  }
-  if (!res.ok) throw new Error(`下载失败 (${res.status})`);
-  // 成功：从响应头取文件名，blob 触发浏览器下载
-  const blob = await res.blob();
-  const cd = res.headers.get('Content-Disposition') || '';
-  const m = cd.match(/filename\*=UTF-8''(.+)$/);
-  const filename = m ? decodeURIComponent(m[1]) : (doc.attachmentName || `${doc.title}`);
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
+  window.location.href = url;
 }
 
 export default { fetchMe, fetchDocuments, downloadDocument, gotoCenterLogin, CENTER_URL };
