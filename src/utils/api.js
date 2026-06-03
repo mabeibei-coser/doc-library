@@ -66,11 +66,4 @@ export function downloadDocument(doc) {
   window.location.href = url;
 }
 
-// 微信内置 WebView 会静默拦截 Content-Disposition: attachment 的导航
-// （表现为「按钮按了像没按一样」），下载入口要先检测、改成引导用户「右上角→在浏览器打开」。
-export function isWeixinBrowser() {
-  if (typeof navigator === 'undefined') return false;
-  return /MicroMessenger/i.test(navigator.userAgent);
-}
-
-export default { fetchMe, fetchDocuments, downloadDocument, gotoCenterLogin, CENTER_URL, isWeixinBrowser };
+export default { fetchMe, fetchDocuments, downloadDocument, gotoCenterLogin, CENTER_URL };

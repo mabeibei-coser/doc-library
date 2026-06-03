@@ -7,7 +7,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
-import { downloadDocument, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL, isWeixinBrowser } from '../utils/api'
+import { downloadDocument, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
 import OfficeInlinePreview from './OfficeInlinePreview'
 
@@ -21,7 +21,6 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const [downloading, setDownloading] = useState(false)
   const [err, setErr] = useState(null)
   const [needVip, setNeedVip] = useState(false)
-  const [wxHint, setWxHint] = useState(false)   // 微信内引导遮罩
 
   if (!doc) return null
   const vipDoc = doc.requiredTier === 'vip'
@@ -41,44 +40,14 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const handleDownload = () => {
     if (downloading) return
     if (locked) { setNeedVip(true); return }   // 非 VIP 看 VIP 档：本地短路，不发请求
-    // 微信 WebView 静默拦截 attachment 跳转 → 显示引导让用户去外部浏览器
-    if (isWeixinBrowser()) { setWxHint(true); return }
     setErr(null); setNeedVip(false); setDownloading(true)
-    downloadDocument(doc)                       // 同步：跳转真实 URL 触发下载
+    downloadDocument(doc)                       // 同步：跳转真实 URL 触发下载（微信 X5 也支持 attachment）
     // 浏览器跳走前给个短暂反馈；attachment 头让导航实际不离开当前页
     setTimeout(() => setDownloading(false), 1500)
   }
 
-  const wxHintDialog = (
-    <Dialog
-      open={wxHint} onClose={() => setWxHint(false)} maxWidth="xs" fullWidth
-      slotProps={{ paper: { sx: { borderRadius: '20px', m: 2 } } }}
-    >
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Box sx={{ fontSize: 36, mb: 1.5 }}>📲</Box>
-        <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--ink)', mb: 1.5 }}>
-          请在浏览器中打开下载
-        </Typography>
-        <Typography sx={{ fontSize: '0.85rem', color: 'var(--ink-2)', lineHeight: 1.7, mb: 2.5, textAlign: 'left' }}>
-          微信浏览器限制文件下载，请按以下两步操作：<br />
-          <strong>1.</strong> 点击当前页面右上角「···」按钮<br />
-          <strong>2.</strong> 选择「在浏览器打开」<br />
-          <Box component="span" sx={{ color: 'var(--ink-3)', fontSize: '0.78rem' }}>
-            （外部浏览器中需要重新登录后再点击下载）
-          </Box>
-        </Typography>
-        <Button
-          fullWidth variant="contained" disableElevation onClick={() => setWxHint(false)}
-          sx={{ py: 1.1, borderRadius: '12px', bgcolor: 'var(--gold)', color: '#fff', fontWeight: 700, '&:hover': { bgcolor: 'var(--gold-ink)' } }}
-        >
-          我知道了
-        </Button>
-      </Box>
-    </Dialog>
-  )
-
   return (
-    <>{wxHintDialog}<Dialog
+    <Dialog
       open={open} onClose={onClose} fullScreen={fullScreen} maxWidth="sm" fullWidth
       slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : '24px', position: 'relative' } } }}
     >
@@ -217,6 +186,6 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
           </Box>
         )}
       </Box>
-    </Dialog></>
+    </Dialog>
   )
 }

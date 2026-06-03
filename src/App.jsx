@@ -54,8 +54,6 @@ export default function App() {
   const [me, setMe] = useState(null)
   const [meReady, setMeReady] = useState(false)
   const [items, setItems] = useState([])
-  const [categories, setCategories] = useState([])
-  const [category, setCategory] = useState('')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
@@ -64,17 +62,17 @@ export default function App() {
     fetchMe().then(setMe).catch(() => setMe(null)).finally(() => setMeReady(true))
   }, [])
 
-  // 搜索/筛选（防抖）
+  // 搜索（防抖）
   useEffect(() => {
     const t = setTimeout(() => {
       setLoading(true)
-      fetchDocuments(category, q)
-        .then((d) => { setItems(d.items); setCategories(d.categories) })
+      fetchDocuments('', q)
+        .then((d) => setItems(d.items))
         .catch(() => setItems([]))
         .finally(() => setLoading(false))
     }, 250)
     return () => clearTimeout(t)
-  }, [category, q])
+  }, [q])
 
   const isVip = me?.isVip
 
@@ -88,7 +86,6 @@ export default function App() {
   // 悬浮底部导航：首页 = 回本应用首页（清搜索 + 清分类 + 回到顶部）；记录 = 会员中心识别历史；我的 = 去会员中心
   const goHome = () => {
     setQ('')
-    setCategory('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const goHistory = () => { window.location.href = `${CENTER_URL}?view=history` }
@@ -104,9 +101,15 @@ export default function App() {
       }}
     >
       <Container maxWidth="md">
-        {/* 头部：第 1 行用户状态条右对齐（VIP chip + 手机号，与 A600 一致），第 2 行标题居中 */}
-        <Box sx={{ mb: { xs: 2.5, md: 3.5 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.75, minHeight: 32, mb: { xs: 1.25, md: 1.5 } }}>
+        {/* 头部：标题左 + 用户状态条右（VIP chip + 手机号），同一行；space-between 撑开保证标题不被 VIP 遮挡 */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, minHeight: 32, mb: { xs: 2.5, md: 3.5 } }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
+          >
+            安全资料库
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
             {meReady && me ? (
               <>
                 {isVip && (
@@ -141,15 +144,6 @@ export default function App() {
               </Button>
             ) : null}
           </Box>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              component="h1"
-              sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
-            >
-              安全资料库
-            </Typography>
-          </Box>
         </Box>
 
         {/* 搜索 */}
@@ -168,48 +162,6 @@ export default function App() {
           }}
           slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'var(--ink-3)' }} /></InputAdornment> } }}
         />
-
-        {/* 分类导航条：横向滚动 chip，第一项「全部」 */}
-        {categories.length > 0 && (
-          <Box
-            sx={{
-              display: 'flex', gap: 0.75, mb: 2,
-              overflowX: 'auto', overflowY: 'hidden',
-              pb: 0.5, mx: -0.5, px: 0.5,
-              scrollbarWidth: 'none',
-              '&::-webkit-scrollbar': { display: 'none' },
-            }}
-          >
-            {[{ key: '', label: '全部' }, ...categories.map((c) => ({ key: c, label: c }))].map((tab) => {
-              const active = category === tab.key
-              return (
-                <Box
-                  key={tab.key || '__all__'}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setCategory(tab.key)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCategory(tab.key) } }}
-                  sx={{
-                    flexShrink: 0,
-                    px: 1.5, py: 0.6,
-                    borderRadius: 'var(--r-md)',
-                    fontSize: '0.82rem', fontWeight: 700, lineHeight: 1,
-                    cursor: 'pointer', outline: 'none', userSelect: 'none',
-                    border: '1px solid',
-                    bgcolor: active ? 'var(--accent)' : 'var(--accent-soft)',
-                    color: active ? '#fff' : 'var(--accent-ink)',
-                    borderColor: active ? 'var(--accent)' : 'transparent',
-                    transition: 'background-color .15s, color .15s, border-color .15s',
-                    '&:hover': active ? {} : { bgcolor: '#bff5e6' },
-                    '&:focus-visible': { boxShadow: 'var(--shadow-focus)' },
-                  }}
-                >
-                  {tab.label}
-                </Box>
-              )
-            })}
-          </Box>
-        )}
 
         {/* 文档列表 / 骨架 / 空状态 */}
         {loading ? (
