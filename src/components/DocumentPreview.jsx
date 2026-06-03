@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, Box, Typography, Button, Chip, IconButton, CircularProgress, useMediaQuery, useTheme } from '@mui/material'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
@@ -7,7 +7,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
-import { downloadDocument, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL } from '../utils/api'
+import { fetchSignedDownloadUrl, triggerDownload, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
 import OfficeInlinePreview from './OfficeInlinePreview'
 
@@ -21,6 +21,20 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const [downloading, setDownloading] = useState(false)
   const [err, setErr] = useState(null)
   const [needVip, setNeedVip] = useState(false)
+  // 签名下载 URL：弹窗打开时挂载预签，10 分钟有效。点击下载纯同步跳转。
+  // 跨进程友好：用户「在浏览器打开」跳到 OPPO/系统浏览器时，URL 自带凭证不必重登。
+  const [signedUrl, setSignedUrl] = useState(null)
+
+  // 进入预览（已登录 + 有附件 + 非 locked）就预签
+  useEffect(() => {
+    if (!open || !doc || !doc.hasAttachment) { setSignedUrl(null); return }
+    if (doc.requiredTier === 'vip' && !isVip) { setSignedUrl(null); return }
+    let cancelled = false
+    fetchSignedDownloadUrl(doc.id)
+      .then((url) => { if (!cancelled) setSignedUrl(url) })
+      .catch(() => { if (!cancelled) setSignedUrl(null) })
+    return () => { cancelled = true }
+  }, [open, doc?.id, isVip])
 
   if (!doc) return null
   const vipDoc = doc.requiredTier === 'vip'
@@ -40,8 +54,12 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const handleDownload = () => {
     if (downloading) return
     if (locked) { setNeedVip(true); return }   // 非 VIP 看 VIP 档：本地短路，不发请求
+    if (!signedUrl) {                          // 签名还没回来 / 失败
+      setErr('下载链接准备中，请稍后再试')
+      return
+    }
     setErr(null); setNeedVip(false); setDownloading(true)
-    downloadDocument(doc)                       // 同步：跳转真实 URL 触发下载（微信 X5 也支持 attachment）
+    triggerDownload(signedUrl)                  // 同步：用户手势内跳转，浏览器原生 attachment 下载
     // 浏览器跳走前给个短暂反馈；attachment 头让导航实际不离开当前页
     setTimeout(() => setDownloading(false), 1500)
   }

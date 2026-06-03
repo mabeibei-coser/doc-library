@@ -56,14 +56,21 @@ export function gotoCenterLogin() {
 }
 
 /**
- * 下载文档：跳转真实 HTTP URL，让浏览器原生处理下载。
- * 之前 fetch+blob URL 在微信 WebView 不兼容（blob 跨进程失效）；
- * 现在直跳 URL，服务端 Content-Disposition: attachment 触发下载。
- * 鉴权改由前端按钮三态预判 + onClick locked 本地短路，不再做 fetch 预检。
+ * 在微信内（已登录态）拿到 10 分钟有效的签名下载 URL。
+ * 用户用「在浏览器中打开」跳到外部浏览器时，这个 URL 自带凭证、不再需要 cookie。
+ * 返回完整 URL，前端可同步赋给 window.location.href。
  */
-export function downloadDocument(doc) {
-  const url = `${API_BASE}/documents/${doc.id}/download`;
+export async function fetchSignedDownloadUrl(docId) {
+  const data = await http('POST', `/documents/${docId}/sign-download`);
+  return `${API_BASE}/documents/${docId}/download?dt=${encodeURIComponent(data.token)}`;
+}
+
+/**
+ * 触发下载：必须用户手势同步调用。
+ * URL 应预先通过 fetchSignedDownloadUrl 拿到（在 useEffect 里），点击时直接传进来。
+ */
+export function triggerDownload(url) {
   window.location.href = url;
 }
 
-export default { fetchMe, fetchDocuments, downloadDocument, gotoCenterLogin, CENTER_URL };
+export default { fetchMe, fetchDocuments, fetchSignedDownloadUrl, triggerDownload, gotoCenterLogin, CENTER_URL };

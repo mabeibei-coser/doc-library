@@ -14,6 +14,7 @@ const { getSession } = await import("./lib/session.js");
 const { getDb } = await import("./lib/db.js");
 const docs = await import("./lib/documents.js");
 const { generatePreviews } = await import("./lib/previewGenerator.js");
+const { signDownloadToken, verifyDownloadToken } = await import("./lib/download-token.js");
 
 const PORT = Number(process.env.DOC_API_PORT || process.env.PORT) || 4003;
 const CENTER_BASE_URL = process.env.ASG_CENTER_BASE_URL || "http://localhost:4002";
@@ -64,6 +65,15 @@ function requireAdminSecret(req, res, next) {
   if (got !== ADMIN_SECRET) return res.status(403).json({ error: "无权访问" });
   next();
 }
+
+// ════════════ HTML 错误页（下载流不该返 JSON，否则浏览器把 JSON 当页面渲染）════════════
+// 用户在「在浏览器中打开」后跨进程访问，没 cookie → 返友好 HTML，引导回微信
+function htmlPage(title, inner) {
+  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;padding:48px 24px;background:#f4f3ee;color:#1a1815;text-align:center;margin:0;min-height:100vh;box-sizing:border-box}.icon{font-size:64px;margin-bottom:16px}h1{font-size:20px;font-weight:700;margin:8px 0 16px}p{font-size:14px;line-height:1.7;color:#6b6962;max-width:320px;margin:0 auto 8px}.hint{background:#fff;border-radius:12px;padding:20px 24px;margin:24px auto;max-width:320px;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.04)}.hint p{margin:6px 0;max-width:none}.hint b{color:#1f7a4d}</style></head><body>${inner}</body></html>`;
+}
+const htmlLoginPrompt = () => htmlPage("登录已失效", `<div class="icon">🔒</div><h1>登录已失效</h1><p>下载链接已过期（10 分钟）或您未在微信内登录。</p><div class="hint"><p><b>请回到微信内重新打开：</b></p><p>1. 关闭这个浏览器标签</p><p>2. 回到微信</p><p>3. 重新打开文档并点击「下载文档」</p></div>`);
+const htmlVipPrompt = () => htmlPage("VIP 专享", `<div class="icon">👑</div><h1>该文档为 VIP 专享</h1><p>请回到微信内开通 VIP 后下载。</p>`);
+const htmlNotFound = (msg) => htmlPage("文件不存在", `<div class="icon">❌</div><h1>${msg}</h1>`);
 
 // ════════════ 前台：列表 / 分类 / 详情 ════════════
 
@@ -129,35 +139,63 @@ app.get(
 
 // ════════════ 前台：下载（核心守门）════════════
 // free 档：登录即可；vip 档：必须 VIP（服务端二次校验，不只靠前端）。
+//
+// 鉴权双轨：
+// 1) ?dt=<token>（签名 URL）—— 用户在微信内 POST /sign-download 时签发，10 分钟有效。
+//    跨进程友好：用户用「在浏览器中打开」跳过去后，URL 本身就带凭证，不再需要 cookie。
+// 2) Cookie session —— 老路径兜底（已登录用户直接访问无 token 的 URL）。
 
-app.get(
-  "/api/documents/:id/download",
+// 在微信里 POST 拿签名 URL：让外部浏览器复制链接也能下载、不必重登
+app.post(
+  "/api/documents/:id/sign-download",
   requireSession(async (req, res) => {
-    const doc = docs.getDocumentRaw(Number(req.params.id));
+    const id = Number(req.params.id);
+    const doc = docs.getDocumentRaw(id);
     if (!doc || doc.status !== "published") return res.status(404).json({ error: "文档不存在" });
     if (!doc.attachment) return res.status(404).json({ error: "该文档暂无附件" });
-
     if (doc.required_tier === "vip") {
       const isVip = await fetchIsVip(req);
       if (!isVip) {
-        return res.status(403).json({
-          error: "该文档为 VIP 会员专享",
-          needVip: true,
-          billingUrl: `${CENTER_BASE_URL}/`,
-        });
+        return res.status(403).json({ error: "该文档为 VIP 会员专享", needVip: true });
       }
     }
-
-    const filePath = path.join(ATTACH_DIR, doc.attachment.storedName);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: "附件文件丢失" });
-
-    docs.recordDownload(req.session.phone, doc);
-    // 中文文件名用 RFC 5987 编码，避免下载乱码
-    const encoded = encodeURIComponent(doc.attachment.originalName);
-    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
-    res.sendFile(filePath);
+    const token = signDownloadToken({ phone: req.session.phone, scope: "doc-download", ref: id });
+    res.json({ token });
   })
 );
+
+app.get("/api/documents/:id/download", async (req, res) => {
+  const id = Number(req.params.id);
+  const doc = docs.getDocumentRaw(id);
+  if (!doc || doc.status !== "published") return res.status(404).send(htmlNotFound("文档不存在"));
+  if (!doc.attachment) return res.status(404).send(htmlNotFound("该文档暂无附件"));
+
+  // 鉴权双轨：token 优先 → cookie fallback
+  let phone = null;
+  const dt = typeof req.query.dt === "string" ? req.query.dt : null;
+  if (dt) {
+    const ok = verifyDownloadToken(dt, { scope: "doc-download", ref: id });
+    if (ok) phone = ok.phone; // 签发时已校过 VIP，这里直接放行
+  }
+  if (!phone) {
+    const session = await getSession(req, res);
+    if (!session.phone) return res.status(401).send(htmlLoginPrompt());
+    phone = session.phone;
+    if (doc.required_tier === "vip") {
+      const isVip = await fetchIsVip(req);
+      if (!isVip) return res.status(403).send(htmlVipPrompt());
+    }
+  }
+
+  const filePath = path.join(ATTACH_DIR, doc.attachment.storedName);
+  if (!fs.existsSync(filePath)) return res.status(404).send(htmlNotFound("附件文件丢失"));
+
+  docs.recordDownload(phone, doc);
+  // 中文文件名用 RFC 5987 编码，避免下载乱码
+  const encoded = encodeURIComponent(doc.attachment.originalName);
+  res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
+  res.sendFile(filePath);
+});
 
 // ════════════ 内部 admin 接口（供 admin-hub 经 HTTP 调用，secret 鉴权）════════════
 // 文档库自己写自己的库，不让 admin-hub 跨库写（遵守 admin-hub 铁律）。
