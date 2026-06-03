@@ -114,7 +114,7 @@ export default function App() {
                     sx={{ height: 22, fontSize: '0.7rem', fontWeight: 800, bgcolor: 'var(--gold-soft)', color: 'var(--gold-ink)', border: '1px solid rgba(176,138,62,0.35)' }}
                   />
                 )}
-                <Typography sx={{ fontSize: '0.85rem', color: 'var(--ink)', fontWeight: 600, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>{maskPhone(me.phone)}</Typography>
+                <Typography sx={{ fontSize: '0.85rem', color: 'var(--ink)', fontWeight: 600 }}>{maskPhone(me.phone)}</Typography>
                 <Tooltip title="会员中心">
                   <IconButton size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ color: 'primary.main' }}>
                     <WorkspacePremiumIcon sx={{ fontSize: 18 }} />
