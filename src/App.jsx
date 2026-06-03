@@ -102,9 +102,6 @@ export default function App() {
             >
               安全资料库
             </Typography>
-            <Typography sx={{ mt: 1, color: 'text.secondary', fontSize: { xs: '0.82rem', md: '0.9rem' }, lineHeight: 1.6, maxWidth: 520, mx: 'auto' }}>
-              安全规范、应急预案、检查表模板，一处取齐。免费文档登录即下，VIP 解锁全部。
-            </Typography>
           </Box>
 
           {/* 用户状态：绝对定位右上 */}
@@ -117,7 +114,7 @@ export default function App() {
                     sx={{ height: 22, fontSize: '0.7rem', fontWeight: 800, bgcolor: 'var(--gold-soft)', color: 'var(--gold-ink)', border: '1px solid rgba(176,138,62,0.35)' }}
                   />
                 )}
-                <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', fontWeight: 600 }}>{maskPhone(me.phone)}</Typography>
+                <Typography sx={{ fontSize: '0.85rem', color: 'var(--ink)', fontWeight: 600, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>{maskPhone(me.phone)}</Typography>
                 <Tooltip title="会员中心">
                   <IconButton size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ color: 'primary.main' }}>
                     <WorkspacePremiumIcon sx={{ fontSize: 18 }} />
@@ -151,28 +148,6 @@ export default function App() {
           }}
           slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'var(--ink-3)' }} /></InputAdornment> } }}
         />
-
-        {/* 分类筛选 */}
-        {categories.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-            {['', ...categories].map((c) => {
-              const active = category === c
-              return (
-                <Chip
-                  key={c || '__all__'} label={c || '全部'} onClick={() => setCategory(c)}
-                  sx={{
-                    height: 34, px: 0.5, fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-                    border: '1px solid',
-                    transition: 'all .2s cubic-bezier(0.16,1,0.3,1)',
-                    ...(active
-                      ? { bgcolor: 'primary.main', color: '#fff', borderColor: 'primary.main', boxShadow: '0 6px 16px -8px rgba(15,118,110,0.5)' }
-                      : { bgcolor: '#fff', color: 'text.secondary', borderColor: 'divider', '&:hover': { borderColor: 'var(--line-strong)', transform: 'translateY(-1px)' } }),
-                  }}
-                />
-              )
-            })}
-          </Box>
-        )}
 
         {/* 文档列表 / 骨架 / 空状态 */}
         {loading ? (
