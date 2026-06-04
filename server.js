@@ -17,8 +17,16 @@ const { generatePreviews } = await import("./lib/previewGenerator.js");
 const { signDownloadToken, verifyDownloadToken } = await import("./lib/download-token.js");
 
 const PORT = Number(process.env.DOC_API_PORT || process.env.PORT) || 4003;
-const CENTER_BASE_URL = process.env.ASG_CENTER_BASE_URL || "http://localhost:4002";
+// A800 一库管两域：按文档 category 路由到对应会员中心刷 VIP（ASG100 / ATA100）。
+// PROJECTS.md 明确两域 VIP 互不抵扣，所以不并问、按分类精确选 center。
+const ASG_CENTER_BASE_URL = process.env.ASG_CENTER_BASE_URL || "http://localhost:4002";
+const ATA_CENTER_BASE_URL = process.env.ATA_CENTER_BASE_URL || "http://localhost:4004";
 const ADMIN_SECRET = process.env.DOC_ADMIN_SECRET || "";
+
+/** 按文档分类选会员中心：「人才ATA」→ ATA100；其它（含 null）→ ASG100。 */
+function centerForDoc(doc) {
+  return doc?.category === "人才ATA" ? ATA_CENTER_BASE_URL : ASG_CENTER_BASE_URL;
+}
 
 const DATA_DIR = path.join(__dirname, "data");
 const ATTACH_DIR = path.join(DATA_DIR, "doc-attachments");
@@ -42,10 +50,12 @@ function requireSession(handler) {
   };
 }
 
-// 问会员中心：这人是不是 VIP（转发 cookie）。失败 fail-closed（非 VIP）。
-async function fetchIsVip(req) {
+// 问对应业务域的会员中心：这人是不是 VIP（按 doc 分类决定问 ASG100 还是 ATA100）。
+// 整 cookie header 透传，目标 center 只解自己签发的那个 cookieName。失败 fail-closed（非 VIP）。
+async function fetchIsVip(req, doc) {
+  const centerUrl = centerForDoc(doc);
   try {
-    const resp = await fetch(`${CENTER_BASE_URL}/api/membership/me`, {
+    const resp = await fetch(`${centerUrl}/api/membership/me`, {
       headers: { cookie: req.headers.cookie || "" },
       signal: AbortSignal.timeout(5000),
     });
@@ -117,12 +127,12 @@ app.get(
     if (!doc.attachment) return res.status(404).json({ error: "该文档暂无附件" });
 
     if (doc.required_tier === "vip") {
-      const isVip = await fetchIsVip(req);
+      const isVip = await fetchIsVip(req, doc);
       if (!isVip) {
         return res.status(403).json({
           error: "该文档为 VIP 会员专享",
           needVip: true,
-          billingUrl: `${CENTER_BASE_URL}/`,
+          billingUrl: `${centerForDoc(doc)}/`,
         });
       }
     }
@@ -154,7 +164,7 @@ app.post(
     if (!doc || doc.status !== "published") return res.status(404).json({ error: "文档不存在" });
     if (!doc.attachment) return res.status(404).json({ error: "该文档暂无附件" });
     if (doc.required_tier === "vip") {
-      const isVip = await fetchIsVip(req);
+      const isVip = await fetchIsVip(req, doc);
       if (!isVip) {
         return res.status(403).json({ error: "该文档为 VIP 会员专享", needVip: true });
       }
@@ -182,7 +192,7 @@ app.get("/api/documents/:id/download", async (req, res) => {
     if (!session.phone) return res.status(401).send(htmlLoginPrompt());
     phone = session.phone;
     if (doc.required_tier === "vip") {
-      const isVip = await fetchIsVip(req);
+      const isVip = await fetchIsVip(req, doc);
       if (!isVip) return res.status(403).send(htmlVipPrompt());
     }
   }
