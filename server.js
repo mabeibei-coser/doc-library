@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 
 const { default: express } = await import("express");
 const { default: multer } = await import("multer");
-const { getSession } = await import("./lib/session.js");
+const { getSession, getCookieDomain } = await import("./lib/session.js");
 const { getDb } = await import("./lib/db.js");
 const docs = await import("./lib/documents.js");
 const { generatePreviews } = await import("./lib/previewGenerator.js");
@@ -87,18 +87,28 @@ const htmlNotFound = (msg) => htmlPage("文件不存在", `<div class="icon">❌
 
 // ════════════ 前台：列表 / 分类 / 详情 ════════════
 
-app.get("/api/documents", (req, res) => {
-  // admin-hub 管理端调用时带 x-admin-secret（看全部分类）；浏览器公开前台没有，按 publicScope 隐藏其它业务域。
+app.get("/api/documents", async (req, res) => {
+  // admin-hub 管理端调用时带 x-admin-secret（看全部分类，category 可不传）；
+  // 浏览器公开前台必须按域过滤——优先 URL ?category=，其次按 cookie 推断（ASG/ATA），都没默认安防ASG。
+  // 兜底定在「安防ASG」而非「人才ATA」是为了避免裸 URL 把薪酬数据反向暴露给安防岗。
   const isAdmin = !!ADMIN_SECRET && req.headers["x-admin-secret"] === ADMIN_SECRET;
-  const publicScope = !isAdmin;
+  let category = typeof req.query.category === "string" && req.query.category ? req.query.category : undefined;
+  if (!isAdmin && !category) {
+    const dom = await getCookieDomain(req, res);
+    category = dom === "ata" ? "人才ATA" : "安防ASG";
+  }
   const items = docs.listDocuments({
-    category: req.query.category,
+    category,
     subcategory: req.query.subcategory,
     requiredTier: req.query.requiredTier,
     q: req.query.q,
-    publicScope,
   });
-  res.json({ items, categories: docs.listCategories({ publicScope }) });
+  // 把当前生效的 category 回给前端，让裸 URL 进来的用户也能正确切换标题（前端拿不到 httpOnly cookie）。
+  res.json({
+    items,
+    category: category ?? null,
+    categories: isAdmin ? docs.listCategories({}) : docs.listCategories({ limitToCategory: category }),
+  });
 });
 
 app.get("/api/documents/:id", (req, res) => {

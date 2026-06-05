@@ -50,6 +50,15 @@ const listSurfaceSx = {
   boxShadow: '0 10px 30px -18px rgba(15, 118, 110, 0.16)',
 }
 
+// URL 里的 ?category= 决定当前用户应看到哪一域文档；没传由后端按 cookie 兜底（见 server.js /api/documents）。
+// 入口：ASG100 / ATA100 各自首页跳过来时会显式带参数；老链接 / 收藏的裸 URL 走 cookie 兜底。
+const URL_CATEGORY = (() => {
+  try { return new URLSearchParams(window.location.search).get('category') || '' } catch { return '' }
+})()
+
+// 当前域 → 标题：ATA 用户看到「岗位全景」，其余（含 ASG / 未识别）看到「安全资料库」。
+const titleForCategory = (cat) => cat === '人才ATA' ? '岗位全景' : '安全资料库'
+
 export default function App() {
   const [me, setMe] = useState(null)
   const [meReady, setMeReady] = useState(false)
@@ -57,17 +66,28 @@ export default function App() {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedDoc, setSelectedDoc] = useState(null)
+  // 实际生效的域：URL 显式传了就用 URL 的；否则用后端返回的（按 cookie 推断的结果），后端给出前先用 URL 值占位
+  const [activeCategory, setActiveCategory] = useState(URL_CATEGORY)
 
   useEffect(() => {
     fetchMe().then(setMe).catch(() => setMe(null)).finally(() => setMeReady(true))
   }, [])
 
+  // 浏览器 tab 标题跟随域切换，避免 ATA 用户看到"安防文档库"违和
+  useEffect(() => {
+    document.title = titleForCategory(activeCategory)
+  }, [activeCategory])
+
   // 搜索（防抖）
   useEffect(() => {
     const t = setTimeout(() => {
       setLoading(true)
-      fetchDocuments('', q)
-        .then((d) => setItems(d.items))
+      fetchDocuments(URL_CATEGORY, q)
+        .then((d) => {
+          setItems(d.items)
+          // 后端回的 category 是"实际生效的域"（兜底之后的结果）→ 同步给标题用
+          if (d.category) setActiveCategory(d.category)
+        })
         .catch(() => setItems([]))
         .finally(() => setLoading(false))
     }, 250)
@@ -107,7 +127,7 @@ export default function App() {
             component="h1"
             sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
           >
-            安全资料库
+            {titleForCategory(activeCategory)}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
             {meReady && me ? (
