@@ -7,7 +7,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
-import { fetchSignedDownloadUrl, triggerDownload, gotoCenterLogin, previewSrc, inlineUrl, CENTER_URL } from '../utils/api'
+import { fetchSignedDownloadUrl, triggerDownload, gotoCenterLogin, previewSrc, inlineUrl, centerUrlFor } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
 import OfficeInlinePreview from './OfficeInlinePreview'
 
@@ -153,7 +153,7 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
             <WorkspacePremiumIcon sx={{ fontSize: 18, color: 'var(--gold)', flexShrink: 0 }} />
             <Typography sx={{ flex: 1, fontSize: '0.82rem', color: 'var(--gold-ink)', fontWeight: 600 }}>该文档为 VIP 会员专享</Typography>
             <Button
-              size="small" onClick={() => { window.location.href = CENTER_URL }}
+              size="small" onClick={() => { window.location.href = centerUrlFor(doc?.category) }}
               sx={{ flexShrink: 0, color: '#fff', bgcolor: 'var(--gold)', fontWeight: 700, borderRadius: 'var(--r-sm)', px: 1.5, '&:hover': { bgcolor: 'var(--gold-ink)' } }}
             >
               去开通

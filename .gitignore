@@ -27,3 +27,6 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+
+# Planning / 工作记录
+.planning/

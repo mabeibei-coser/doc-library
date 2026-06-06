@@ -9,7 +9,7 @@ import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import DocumentCard from './components/DocumentCard'
 import DocumentPreview from './components/DocumentPreview'
 import BottomNav from './components/BottomNav'
-import { fetchMe, fetchDocuments, gotoCenterLogin, recordView, CENTER_URL } from './utils/api'
+import { fetchMe, fetchDocuments, gotoCenterLogin, recordView, centerUrlFor } from './utils/api'
 
 // 手机号打码：保留前 3 位、后 2 位，中间全部打码 → 18621933756 → 186******56
 const maskPhone = (p) => {
@@ -108,8 +108,9 @@ export default function App() {
     setQ('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const goHistory = () => { window.location.href = `${CENTER_URL}?view=history` }
-  const goMine = () => { window.location.href = CENTER_URL }
+  // 回中心按当前域路由：activeCategory 优先用 URL 显式值，裸 URL 进来时被后端按 cookie 兜底纠正
+  const goHistory = () => { window.location.href = `${centerUrlFor(activeCategory)}?view=history` }
+  const goMine = () => { window.location.href = centerUrlFor(activeCategory) }
 
   return (
     <Box
@@ -144,7 +145,7 @@ export default function App() {
                 </Typography>
                 {!isVip && (
                   <Tooltip title="会员中心">
-                    <IconButton size="small" onClick={() => { window.location.href = CENTER_URL }} sx={{ color: 'var(--ink-3)', p: 0.5 }}>
+                    <IconButton size="small" onClick={() => { window.location.href = centerUrlFor(activeCategory) }} sx={{ color: 'var(--ink-3)', p: 0.5 }}>
                       <WorkspacePremiumIcon sx={{ fontSize: 16 }} />
                     </IconButton>
                   </Tooltip>

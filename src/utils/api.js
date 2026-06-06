@@ -3,7 +3,22 @@
  * 登录态来自会员中心共享 cookie；下载时后端会问中心要不要 VIP。
  */
 const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/api`;
-export const CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4002/';
+
+// 一库管两域：ASG 是首发域（VITE_CENTER_URL 历史名，留作 ASG 兜底）；ATA 后接入用 VITE_ATA_CENTER_URL。
+// 本地默认 ASG=:4002 / ATA=:4004（与各 center dev 端口对齐）。
+const ASG_CENTER_URL = import.meta.env.VITE_CENTER_URL || 'http://localhost:4002/';
+const ATA_CENTER_URL = import.meta.env.VITE_ATA_CENTER_URL || 'http://localhost:4004/';
+
+/** 按文档/页面所属域返回会员中心地址。'人才ATA' → ATA；其余（含空）→ ASG（兜底，避免薪酬入口被错引到 ASG 时显得正常）。 */
+export const centerUrlFor = (category) => (category === '人才ATA' ? ATA_CENTER_URL : ASG_CENTER_URL);
+
+// URL ?category= 是"当前页面属于哪个域"最准的入口信号；裸 URL 进来则空，自动落到 ASG 兜底。
+const URL_CATEGORY = (() => {
+  try { return new URLSearchParams(window.location.search).get('category') || '' } catch { return '' }
+})();
+
+// 向后兼容：默认 CENTER_URL 跟着 URL_CATEGORY 路由，旧引用（fetchMe / gotoCenterLogin）自动走对中心。
+export const CENTER_URL = centerUrlFor(URL_CATEGORY);
 
 // 预览图绝对地址：后端返回的 url 形如 /api/preview/xxx，前端要补上部署子路径（线上 /a800/）。
 export const previewSrc = (url) => `${import.meta.env.BASE_URL.replace(/\/$/, '')}${url || ''}`;
