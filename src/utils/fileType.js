@@ -11,6 +11,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import MovieOutlinedIcon from '@mui/icons-material/MovieOutlined'
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined'
+import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined'
 
 /**
  * mime + 文件名 → 类型 kind。office 系列拆成 word/excel/ppt，其余归 image/video/pdf/other。
@@ -25,6 +26,7 @@ export function getFileType(mime, name) {
   if (['xls', 'xlsx', 'csv'].includes(ext)) return 'excel'
   if (['ppt', 'pptx'].includes(ext)) return 'ppt'
   if (['doc', 'docx', 'rtf'].includes(ext)) return 'word'
+  if (['zip', 'rar', '7z'].includes(ext)) return 'archive'
   // 后缀不认识时再看 mime
   const m = (mime || '').toLowerCase()
   if (m.startsWith('image/')) return 'image'
@@ -33,6 +35,7 @@ export function getFileType(mime, name) {
   if (m.includes('spreadsheet') || m.includes('ms-excel')) return 'excel'
   if (m.includes('presentation') || m.includes('powerpoint')) return 'ppt'
   if (m.includes('word') || m.includes('wordprocessing')) return 'word'
+  if (m.includes('zip') || m.includes('rar') || m.includes('compressed') || m.includes('7z')) return 'archive'
   return 'other'
 }
 
@@ -44,6 +47,7 @@ export const FILE_TYPE_META = {
   pdf: { Icon: PictureAsPdfOutlinedIcon, fg: '#c5392b', bg: '#fbe7e2', label: 'PDF' },
   image: { Icon: ImageOutlinedIcon, fg: '#7a5bbd', bg: '#efeafb', label: '图片' },
   video: { Icon: MovieOutlinedIcon, fg: '#b5357e', bg: '#fbe8f2', label: '视频' },
+  archive: { Icon: ArchiveOutlinedIcon, fg: '#7a5a1f', bg: '#f7eddc', label: '压缩包' },
   other: { Icon: InsertDriveFileOutlinedIcon, fg: '#64748b', bg: '#eef1f5', label: '文件' },
 }
 

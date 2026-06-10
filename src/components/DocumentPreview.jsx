@@ -5,8 +5,46 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
-import { fetchSignedDownloadUrl, triggerDownload, inlineUrl, centerUrlFor } from '../utils/api'
+import { fetchSignedDownloadUrl, triggerDownload, inlineUrl, centerUrlFor, previewSrc } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
+
+function descriptionImageSrc(url) {
+  if (/^(https?:|data:|blob:)/i.test(url)) return url
+  if (url.startsWith('/api/preview/')) return previewSrc(url)
+  return url
+}
+
+function DescriptionContent({ value }) {
+  const parts = []
+  const re = /!\[([^\]]*)\]\(([^)]+)\)/g
+  let last = 0
+  let match
+  while ((match = re.exec(value))) {
+    if (match.index > last) parts.push({ type: 'text', value: value.slice(last, match.index) })
+    parts.push({ type: 'image', alt: match[1] || '说明图片', url: match[2] })
+    last = re.lastIndex
+  }
+  if (last < value.length) parts.push({ type: 'text', value: value.slice(last) })
+
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      {parts.map((part, i) => part.type === 'image' ? (
+        <Box
+          key={`img-${i}`}
+          component="img"
+          src={descriptionImageSrc(part.url)}
+          alt={part.alt}
+          loading="lazy"
+          sx={{ width: '100%', display: 'block', borderRadius: '12px', border: '1px solid', borderColor: 'divider', bgcolor: 'var(--bg-mute)', my: 1.25 }}
+        />
+      ) : part.value.trim() ? (
+        <Typography key={`text-${i}`} sx={{ color: 'var(--ink-2)', fontSize: '0.92rem', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+          {part.value}
+        </Typography>
+      ) : null)}
+    </Box>
+  )
+}
 
 /**
  * 文档预览界面（弹窗）：标题 / 分类+免费VIP角标 / 完整简介 / 图片或视频预览 / 下载。
@@ -98,9 +136,7 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
 
         {/* 简介（完整） */}
         {doc.description && (
-          <Typography sx={{ color: 'var(--ink-2)', fontSize: '0.92rem', lineHeight: 1.75, mb: 2.5, whiteSpace: 'pre-wrap' }}>
-            {doc.description}
-          </Typography>
+          <DescriptionContent value={doc.description} />
         )}
 
         {/* 下载：右侧小按钮，三态——免费/VIP 解锁/锁定（普通用户看 VIP 档）。 */}
