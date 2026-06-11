@@ -108,8 +108,8 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
       </IconButton>
 
       <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-        {/* 头部：图标 + 标题 + 角标 */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2.5, pr: 4 }}>
+        {/* 头部：图标 + 标题 + 角标 + 右侧下载按钮（与 chips 同一行）。pr 给左上关闭按钮留位。 */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2, pr: 5 }}>
           <Box sx={{ width: 56, height: 56, borderRadius: '16px', bgcolor: ft.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <FileIcon titleAccess={ft.label} sx={{ color: ft.fg, fontSize: 30 }} />
           </Box>
@@ -117,68 +117,63 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
             <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.3rem' }, color: 'var(--ink)', lineHeight: 1.3, letterSpacing: '-0.01em' }}>
               {doc.title}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mt: 1 }}>
-              {doc.category && <Chip label={doc.category} size="small" sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'var(--bg-mute)', color: 'var(--ink-2)' }} />}
-              {vipDoc ? (
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 'var(--r-sm)', bgcolor: 'var(--gold-soft)', border: '1px solid rgba(176,138,62,0.4)' }}>
-                  <WorkspacePremiumIcon sx={{ fontSize: 14, color: 'var(--gold)' }} />
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--gold-ink)', lineHeight: 1 }}>VIP 专享</Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 'var(--r-sm)', bgcolor: 'var(--success-soft)', border: '1px solid rgba(47,133,89,0.3)' }}>
-                  <TaskAltRoundedIcon sx={{ fontSize: 14, color: 'var(--success)' }} />
-                  <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--success-ink)', lineHeight: 1 }}>免费</Typography>
-                </Box>
-              )}
+            {/* 副信息行：左 chips（可换行），右下载按钮（紧凑小号）。按钮始终右对齐，chips 多时自动 wrap 不挤按钮。 */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                {doc.category && <Chip label={doc.category} size="small" sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'var(--bg-mute)', color: 'var(--ink-2)' }} />}
+                {vipDoc ? (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 'var(--r-sm)', bgcolor: 'var(--gold-soft)', border: '1px solid rgba(176,138,62,0.4)' }}>
+                    <WorkspacePremiumIcon sx={{ fontSize: 14, color: 'var(--gold)' }} />
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--gold-ink)', lineHeight: 1 }}>VIP 专享</Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.4, px: 1, py: 0.3, borderRadius: 'var(--r-sm)', bgcolor: 'var(--success-soft)', border: '1px solid rgba(47,133,89,0.3)' }}>
+                    <TaskAltRoundedIcon sx={{ fontSize: 14, color: 'var(--success)' }} />
+                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--success-ink)', lineHeight: 1 }}>免费</Typography>
+                  </Box>
+                )}
+              </Box>
+              <Button
+                variant={locked ? 'outlined' : 'contained'} disableElevation size="small"
+                disabled={downloading || !doc.hasAttachment}
+                startIcon={
+                  downloading
+                    ? <CircularProgress size={12} color="inherit" />
+                    : locked
+                      ? <LockOutlinedIcon />
+                      : vipUnlock
+                        ? <WorkspacePremiumIcon />
+                        : <DownloadRoundedIcon />
+                }
+                onClick={handleDownload}
+                sx={{
+                  flexShrink: 0, height: 28, minWidth: 'unset', px: 1.25, py: 0,
+                  borderRadius: '8px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
+                  '& .MuiButton-startIcon': { mr: 0.4, '& svg': { fontSize: 14 } },
+                  '&:active': { transform: 'scale(0.98)' },
+                  ...(locked
+                    ? { color: 'var(--gold-ink)', borderColor: 'rgba(176,138,62,0.4)', bgcolor: 'var(--gold-soft)', '&:hover': { borderColor: 'var(--gold)', bgcolor: '#f7ecca' } }
+                    : vipUnlock
+                      ? { color: '#fff', bgcolor: 'var(--gold)', '&:hover': { bgcolor: 'var(--gold-ink)' } }
+                      : { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }),
+                  '&.Mui-disabled': { bgcolor: 'var(--bg-mute)', color: 'var(--ink-4)' },
+                }}
+              >
+                {!doc.hasAttachment
+                  ? '暂无附件'
+                  : downloading
+                    ? '下载中'
+                    : locked
+                      ? '开通 VIP'
+                      : vipUnlock
+                        ? 'VIP 下载'
+                        : '下载'}
+              </Button>
             </Box>
           </Box>
         </Box>
 
-        {/* 简介（完整） */}
-        {doc.description && (
-          <DescriptionContent value={doc.description} />
-        )}
-
-        {/* 下载：右侧小按钮，三态——免费/VIP 解锁/锁定（普通用户看 VIP 档）。 */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1, mb: 2 }}>
-          <Button
-            variant={locked ? 'outlined' : 'contained'} disableElevation size="small"
-            disabled={downloading || !doc.hasAttachment}
-            startIcon={
-              downloading
-                ? <CircularProgress size={14} color="inherit" />
-                : locked
-                  ? <LockOutlinedIcon />
-                  : vipUnlock
-                    ? <WorkspacePremiumIcon />
-                    : <DownloadRoundedIcon />
-            }
-            onClick={handleDownload}
-            sx={{
-              minWidth: 106, px: 1.75, py: 0.75, borderRadius: '10px', fontSize: '0.8rem', fontWeight: 700,
-              '& .MuiButton-startIcon': { mr: 0.5, '& svg': { fontSize: 16 } },
-              '&:active': { transform: 'scale(0.99)' },
-              ...(locked
-                ? { color: 'var(--gold-ink)', borderColor: 'rgba(176,138,62,0.4)', bgcolor: 'var(--gold-soft)', '&:hover': { borderColor: 'var(--gold)', bgcolor: '#f7ecca' } }
-                : vipUnlock
-                  ? { color: '#fff', bgcolor: 'var(--gold)', '&:hover': { bgcolor: 'var(--gold-ink)' } }
-                  : { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }),
-              '&.Mui-disabled': { bgcolor: 'var(--bg-mute)', color: 'var(--ink-4)' },
-            }}
-          >
-            {!doc.hasAttachment
-              ? '暂无附件'
-              : downloading
-                ? '下载中…'
-                : locked
-                  ? '开通 VIP'
-                  : vipUnlock
-                    ? 'VIP 下载'
-                    : '下载文档'}
-          </Button>
-        </Box>
-
-        {/* VIP 提示 / 错误 */}
+        {/* VIP 提示 / 错误：紧贴头部按钮下方反馈，最直观 */}
         {needVip && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5, px: 1.5, py: 1.25, borderRadius: '12px', bgcolor: 'var(--gold-soft)', border: '1px solid rgba(176,138,62,0.4)' }}>
             <WorkspacePremiumIcon sx={{ fontSize: 18, color: 'var(--gold)', flexShrink: 0 }} />
@@ -192,6 +187,13 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
           </Box>
         )}
         {err && <Typography sx={{ color: 'var(--danger)', fontSize: '0.8rem', mt: 1.5 }}>{err}</Typography>}
+
+        {/* 简介（完整） */}
+        {doc.description && (
+          <Box sx={{ mt: 2 }}>
+            <DescriptionContent value={doc.description} />
+          </Box>
+        )}
 
         {canMediaPreview && (
           <>
