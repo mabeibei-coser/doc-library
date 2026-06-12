@@ -4,6 +4,7 @@ import {
   Button, Chip, IconButton, Tooltip,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined'
 import DocumentCard from './components/DocumentCard'
@@ -111,6 +112,7 @@ export default function App() {
   // 回中心按当前域路由：activeCategory 优先用 URL 显式值，裸 URL 进来时被后端按 cookie 兜底纠正
   const goHistory = () => { window.location.href = `${centerUrlFor(activeCategory)}?view=history` }
   const goMine = () => { window.location.href = centerUrlFor(activeCategory) }
+  const goCenterHome = () => { window.location.href = centerUrlFor(activeCategory) }
 
   return (
     <Box
@@ -124,12 +126,28 @@ export default function App() {
       <Container maxWidth="md">
         {/* 头部：标题左 + 用户状态条右（VIP chip + 手机号），同一行；space-between 撑开保证标题不被 VIP 遮挡 */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, minHeight: 32, mb: { xs: 2.5, md: 3.5 } }}>
-          <Typography
-            component="h1"
-            sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
-          >
-            {titleForCategory(activeCategory)}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            <IconButton
+              aria-label="返回首页"
+              size="small"
+              onClick={goCenterHome}
+              sx={{
+                ml: -1,
+                mr: 0.25,
+                p: 0.35,
+                color: 'var(--ink-2)',
+                '&:hover': { color: 'var(--accent)', bgcolor: 'transparent' },
+              }}
+            >
+              <ArrowBackIosNewIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+            <Typography
+              component="h1"
+              sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
+            >
+              {titleForCategory(activeCategory)}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
             {meReady && me ? (
               <>
@@ -179,6 +197,17 @@ export default function App() {
               '& fieldset': { borderColor: 'divider' },
               '&:hover fieldset': { borderColor: 'var(--line-strong)' },
               '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: 2 },
+            },
+            '& .MuiInputBase-input': {
+              bgcolor: 'transparent',
+              borderRadius: 0,
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            '& .MuiInputBase-input:focus, & .MuiInputBase-input:focus-visible': {
+              bgcolor: 'transparent',
+              boxShadow: 'none',
+              outline: 'none',
             },
           }}
           slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'var(--ink-3)' }} /></InputAdornment> } }}
