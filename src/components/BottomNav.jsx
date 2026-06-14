@@ -11,26 +11,53 @@ export default function BottomNav({ onHome, onHistory, onMine }) {
       elevation={0}
       sx={{
         position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
+        left: '50%',
+        right: 'auto',
+        bottom: 'max(18px, env(safe-area-inset-bottom))',
+        transform: 'translateX(-50%)',
+        width: 'min(346px, calc(100vw - 44px))',
+        maxWidth: 346,
+        height: 56,
+        minHeight: 56,
         zIndex: 1200,
-        borderTop: '1px solid var(--line)',
-        bgcolor: 'background.paper',
-        boxShadow: 'var(--shadow-lg)',
-        pb: 'env(safe-area-inset-bottom)', // 适配 iPhone 底部安全区
+        border: '1px solid var(--line)',
+        borderRadius: '18px',
+        bgcolor: 'rgba(255,255,255,0.90)',
+        boxShadow: '0 14px 32px rgba(15,118,110,0.12), 0 2px 8px rgba(15,20,25,0.06)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        overflow: 'hidden',
       }}
     >
       <BottomNavigation
         showLabels
         value={0}
         sx={{
-          maxWidth: 480,
-          mx: 'auto',
-          height: 60,
+          width: '100%',
+          height: 56,
           bgcolor: 'transparent',
-          '& .MuiBottomNavigationAction-root': { color: 'var(--ink-3)', minWidth: 0 },
+          '& .MuiBottomNavigationAction-root': {
+            position: 'relative',
+            color: 'var(--ink-3)',
+            minWidth: 0,
+            height: 52,
+            padding: '6px 0 7px',
+            fontSize: '0.68rem',
+          },
+          '& .MuiBottomNavigationAction-label': { fontSize: '0.68rem' },
+          '& .MuiBottomNavigationAction-root svg': { fontSize: 20 },
           '& .Mui-selected': { color: 'var(--accent) !important' },
+          '& .Mui-selected::after': {
+            content: '""',
+            position: 'absolute',
+            left: '50%',
+            bottom: 3,
+            width: 22,
+            height: 3,
+            borderRadius: 999,
+            bgcolor: 'var(--accent)',
+            transform: 'translateX(-50%)',
+          },
         }}
       >
         <BottomNavigationAction label="首页" icon={<HomeRoundedIcon />} onClick={onHome} />
