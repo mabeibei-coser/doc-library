@@ -110,7 +110,7 @@ export default function App() {
   }
   // 回中心按当前域路由：activeCategory 优先用 URL 显式值，裸 URL 进来时被后端按 cookie 兜底纠正
   const goHistory = () => { window.location.href = `${centerUrlFor(activeCategory)}?view=history` }
-  const goMine = () => { window.location.href = centerUrlFor(activeCategory) }
+  const goMine = () => { window.location.href = `${centerUrlFor(activeCategory)}?view=profile` }
   const goCenterHome = () => { window.location.href = centerUrlFor(activeCategory) }
 
   return (
