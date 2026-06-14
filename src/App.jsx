@@ -50,6 +50,15 @@ const URL_CATEGORY = (() => {
 // 当前域 → 标题：ATA 用户看到「岗位全景」，其余（含 ASG / 未识别）看到「安全资料库」。
 const titleForCategory = (cat) => cat === '人才ATA' ? '岗位全景' : '安全资料库'
 
+// 列表容器：白底圆角 + 细描边 + 柔投影，行与行首尾相连无空隙（分隔线 + 左侧栏目色条由行自身带）
+const docListSurfaceSx = {
+  bgcolor: 'var(--bg-elev)',
+  borderRadius: 'var(--r-lg)',
+  border: '1px solid var(--line)',
+  overflow: 'hidden',
+  boxShadow: '0 10px 30px -18px rgba(15, 118, 110, 0.16)',
+}
+
 export default function App() {
   const [me, setMe] = useState(null)
   const [meReady, setMeReady] = useState(false)
@@ -213,9 +222,9 @@ export default function App() {
 
         {/* 文档列表 / 骨架 / 空状态 */}
         {loading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
+          <Box sx={docListSurfaceSx}>
             {[0, 1, 2, 3].map((i) => (
-              <Box key={i} sx={{ bgcolor: 'var(--bg-elev)', border: '1px solid var(--line)', borderLeft: '3px solid var(--line-strong)', borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-sm)' }}>
+              <Box key={i} sx={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)', borderLeft: '3px solid var(--line-strong)' }}>
                 <DocSkeleton />
               </Box>
             ))}
@@ -229,11 +238,12 @@ export default function App() {
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>换个关键词，或点上方「全部」看看所有文档</Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
+          <Box sx={docListSurfaceSx}>
             {items.map((doc, i) => (
               <Box
                 key={doc.id}
                 sx={{
+                  borderTop: i === 0 ? 'none' : '1px solid var(--line)',
                   animation: 'docFadeUp .5s cubic-bezier(0.16,1,0.3,1) both',
                   animationDelay: `${Math.min(i, 8) * 55}ms`,
                 }}

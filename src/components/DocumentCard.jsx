@@ -5,10 +5,11 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { catStyleFor, DocLineIcon } from '../utils/docCategory';
 
 /**
- * 文档卡片（统一设计原型终态）：每条文档是一张独立卡片，左侧一条「栏目色条」，
+ * 文档列表行（统一设计原型）：整张列表首尾相连无空隙，每行左侧一条「栏目色条」，
  * 线性文档图标 + 栏目标签共用同一栏目色，整页克制高级。
- * 第二行标签：栏目 · 档位（免费/VIP）· 查看人数。整卡可点 → 打开预览（onOpen）。
+ * 第二行标签：栏目 · 档位（免费/VIP）· 查看人数。整行可点 → 打开预览（onOpen）。
  * 颜色按文档所属栏目（subcategory）区分，未知栏目走确定性回落（见 utils/docCategory）。
+ * 行的圆角/外边框/投影/分隔线由外层 App 的列表容器统一处理，这里只保留左侧色条。
  */
 export default function DocumentCard({ doc, onOpen }) {
   const vipDoc = doc.requiredTier === 'vip';
@@ -28,14 +29,10 @@ export default function DocumentCard({ doc, onOpen }) {
         py: { xs: 1.4, sm: 1.6 },
         cursor: 'pointer',
         outline: 'none',
-        bgcolor: 'var(--bg-elev)',
-        border: '1px solid var(--line)',
         borderLeft: `3px solid ${cs.color}`,
-        borderRadius: 'var(--r-md)',
-        boxShadow: 'var(--shadow-sm)',
-        transition: 'box-shadow .18s, transform .18s, border-color .18s',
-        '&:hover': { boxShadow: '0 8px 20px -10px rgba(15,118,110,0.22)', transform: 'translateY(-1px)' },
-        '&:focus-visible': { boxShadow: 'var(--shadow-focus)' },
+        transition: 'background-color .18s',
+        '&:hover': { bgcolor: 'var(--bg-mute)' },
+        '&:focus-visible': { bgcolor: 'var(--bg-mute)' },
       }}
     >
       {/* 线性文档图标，栏目色 */}
