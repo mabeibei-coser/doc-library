@@ -143,9 +143,7 @@ export default function App() {
             </IconButton>
             {/* 统一页眉签名：小标签 + 大标题 + 青绿渐变下划线 */}
             <Box sx={{ minWidth: 0 }}>
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', mb: 0.5 }}>
-                {activeCategory === '人才ATA' ? '人才 ATA' : '安防 ASG'}
-              </Box>
+              <Box aria-hidden sx={{ display: 'inline-flex', alignItems: 'center', minHeight: '0.84rem', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', mb: 0.5 }} />
               <Typography
                 component="h1"
                 sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.2 }}
