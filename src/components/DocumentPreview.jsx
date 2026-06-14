@@ -5,6 +5,7 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { fetchSignedDownloadUrl, triggerDownload, inlineUrl, centerUrlFor, previewSrc } from '../utils/api'
 import { getFileType, FILE_TYPE_META } from '../utils/fileType'
 
@@ -56,12 +57,15 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
   const [downloading, setDownloading] = useState(false)
   const [err, setErr] = useState(null)
   const [needVip, setNeedVip] = useState(false)
+  // 微信内压缩包下载引导：微信 X5 不允许 WebView 内直接下压缩包，需引导用户跳外部浏览器
+  const [showBrowserHint, setShowBrowserHint] = useState(false)
   // 签名下载 URL：弹窗打开时挂载预签，10 分钟有效。点击下载纯同步跳转。
   // 跨进程友好：用户「在浏览器打开」跳到 OPPO/系统浏览器时，URL 自带凭证不必重登。
   const [signedUrl, setSignedUrl] = useState(null)
 
   // 进入预览（已登录 + 有附件 + 非 locked）就预签
   useEffect(() => {
+    setShowBrowserHint(false)
     if (!open || !doc || !doc.hasAttachment) { setSignedUrl(null); return }
     if (doc.requiredTier === 'vip' && !isVip) { setSignedUrl(null); return }
     let cancelled = false
@@ -90,6 +94,9 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
     }
     setErr(null); setNeedVip(false); setDownloading(true)
     triggerDownload(signedUrl)                  // 同步：用户手势内跳转，浏览器原生 attachment 下载
+    // 压缩包在微信内会被 X5 拦截：不触发下载、只弹含糊的原生提示。此时导航目标已是带签名 token
+    // 的下载 URL，主动给清晰引导教用户「在浏览器打开」即可免登直接下（PDF/图片等微信能内置打开，不引导）。
+    if (fileType === 'archive' && /MicroMessenger/i.test(navigator.userAgent)) setShowBrowserHint(true)
     // 浏览器跳走前给个短暂反馈；attachment 头让导航实际不离开当前页
     setTimeout(() => setDownloading(false), 1500)
   }
@@ -186,6 +193,19 @@ export default function DocumentPreview({ doc, open, onClose, isVip }) {
           </Box>
         )}
         {err && <Typography sx={{ color: 'var(--danger)', fontSize: '0.8rem', mt: 1.5 }}>{err}</Typography>}
+
+        {/* 微信内压缩包：微信不让 WebView 直接下，引导跳外部浏览器（URL 自带签名，免重登） */}
+        {showBrowserHint && (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 1.5, px: 1.5, py: 1.25, borderRadius: '12px', bgcolor: '#e9f1fb', border: '1px solid rgba(47,109,176,0.3)' }}>
+            <InfoOutlinedIcon sx={{ fontSize: 18, color: '#2f6db0', flexShrink: 0, mt: 0.2 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontSize: '0.82rem', color: '#2f6db0', fontWeight: 800, mb: 0.3 }}>压缩包需在浏览器中下载</Typography>
+              <Typography sx={{ fontSize: '0.78rem', color: 'var(--ink-2)', lineHeight: 1.65 }}>
+                微信暂不支持直接下载压缩包。请点右上角 <Box component="span" sx={{ fontWeight: 800, color: 'var(--ink)' }}>···</Box> 菜单 →「在浏览器打开」，即可自动下载（无需重新登录）。
+              </Typography>
+            </Box>
+          </Box>
+        )}
 
         {/* 简介（完整） */}
         {doc.description && (
