@@ -71,13 +71,20 @@ export function gotoCenterLogin() {
 }
 
 /**
- * 在微信内（已登录态）拿到 10 分钟有效的签名下载 URL。
- * 用户用「在浏览器中打开」跳到外部浏览器时，这个 URL 自带凭证、不再需要 cookie。
- * 返回完整 URL，前端可同步赋给 window.location.href。
+ * 在微信内（已登录态）拿到 10 分钟有效的签名下载地址。
+ * 用户用「在浏览器中打开」跳到外部浏览器时，URL 自带凭证、不再需要 cookie。
+ * 返回 { downloadUrl, pageUrl }：
+ *  - downloadUrl：直接下载（iOS 微信 / 外部浏览器 / 非压缩包走这条，可同步赋给 window.location.href）
+ *  - pageUrl：压缩包下载引导页（安卓微信走这条——微信能渲染 HTML、但拦截 zip 下载）
+ * 两者都用 BASE_URL 前缀，子路径部署（线上 /a800/）下也能正确路由。
  */
 export async function fetchSignedDownloadUrl(docId) {
   const data = await http('POST', `/documents/${docId}/sign-download`);
-  return `${API_BASE}/documents/${docId}/download?dt=${encodeURIComponent(data.token)}`;
+  const dt = encodeURIComponent(data.token);
+  return {
+    downloadUrl: `${API_BASE}/documents/${docId}/download?dt=${dt}`,
+    pageUrl: `${API_BASE}/documents/${docId}/download-page?dt=${dt}`,
+  };
 }
 
 /**

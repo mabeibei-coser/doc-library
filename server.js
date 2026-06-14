@@ -85,6 +85,26 @@ const htmlLoginPrompt = () => htmlPage("登录已失效", `<div class="icon">�
 const htmlVipPrompt = () => htmlPage("VIP 专享", `<div class="icon">👑</div><h1>该文档为 VIP 专享</h1><p>请回到微信内开通 VIP 后下载。</p>`);
 const htmlNotFound = (msg) => htmlPage("文件不存在", `<div class="icon">❌</div><h1>${msg}</h1>`);
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// 压缩包下载引导页：安卓微信 X5 内核拦截 .zip/.rar 下载（微信平台限制，改不了），
+// 但能正常渲染 HTML 页。把用户导到这个 HTML 页后，页面 URL 自带签名 token，
+// 用户点「···→ 在浏览器打开」时外部浏览器继承 token，免重登直接下。
+// 页面自身再按 UA 判断：还在安卓微信里 → 只给手动「在浏览器打开」指引（不自动跳，否则又被拦）；
+// 已到外部浏览器 → 自动触发下载 + 手动按钮兜底。
+function htmlDownloadPage(filename, downloadRel) {
+  const safeName = escapeHtml(filename);
+  return htmlPage(
+    "下载文件",
+    `<div class="icon">📦</div><h1 style="font-size:16px;font-weight:700;word-break:break-all">${safeName}</h1>
+<div id="wx" style="display:none"><div class="hint"><p><b>微信暂不支持直接下载压缩包，请：</b></p><p>1. 点右上角 <b>···</b> 菜单</p><p>2. 选择「在浏览器打开」</p><p>3. 打开后会自动开始下载（无需重新登录）</p></div></div>
+<div id="br" style="display:none"><p>正在为你下载…</p><p style="margin-top:16px"><a href="${escapeHtml(downloadRel)}" style="display:inline-block;padding:13px 28px;background:#1f7a4d;color:#fff;border-radius:12px;font-weight:700;text-decoration:none">点此手动下载</a></p><p style="font-size:12px;color:#9a978f;margin-top:14px">如未自动开始，请点上方按钮</p></div>
+<script>(function(){var ua=navigator.userAgent;var wxAndroid=/MicroMessenger/i.test(ua)&&/Android/i.test(ua);document.getElementById(wxAndroid?'wx':'br').style.display='block';if(!wxAndroid){setTimeout(function(){window.location.href=${JSON.stringify(downloadRel)};},300);}})();</script>`
+  );
+}
+
 // ════════════ 前台：列表 / 分类 / 详情 ════════════
 
 app.get("/api/documents", async (req, res) => {
@@ -214,7 +234,28 @@ app.get("/api/documents/:id/download", async (req, res) => {
   // 中文文件名用 RFC 5987 编码，避免下载乱码
   const encoded = encodeURIComponent(doc.attachment.originalName);
   res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encoded}`);
+  // dl=1 只由压缩包下载引导页拼上（外部浏览器那条腿）：强制 octet-stream，
+  // 避免个别国产浏览器把 zip 当网页打开 / 改名。iOS 微信直下不带 dl=1，行为不变。
+  if (req.query.dl === "1") res.setHeader("Content-Type", "application/octet-stream");
   res.sendFile(filePath);
+});
+
+// 压缩包下载引导页（安卓微信专用）：token-only，绝不读 cookie——外部浏览器没有共享 cookie，
+// 全靠 URL 里的 dt 自证身份。失败一律返 HTML（不是 JSON，否则浏览器把 JSON 当页面渲染）。
+app.get("/api/documents/:id/download-page", (req, res) => {
+  const id = Number(req.params.id);
+  const doc = docs.getDocumentRaw(id);
+  if (!doc || doc.status !== "published") return res.status(404).send(htmlNotFound("文档不存在"));
+  if (!doc.attachment) return res.status(404).send(htmlNotFound("该文档暂无附件"));
+  const dt = typeof req.query.dt === "string" ? req.query.dt : null;
+  if (!dt || !verifyDownloadToken(dt, { scope: "doc-download", ref: id })) {
+    return res.status(401).send(htmlLoginPrompt());
+  }
+  // 相对链接：浏览器按当前页 URL（/a800/api/documents/:id/download-page）解析，
+  // 自动落到 /a800/api/documents/:id/download —— 不必关心 nginx 是否剥前缀。
+  const downloadRel = `download?dt=${encodeURIComponent(dt)}&dl=1`;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(htmlDownloadPage(doc.attachment.originalName, downloadRel));
 });
 
 // ════════════ 内部 admin 接口（供 admin-hub 经 HTTP 调用，secret 鉴权）════════════
