@@ -2,21 +2,17 @@ import { Box, Typography } from '@mui/material';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import { fileTypeMeta } from '../utils/fileType';
+import { catStyleFor, DocLineIcon } from '../utils/docCategory';
 
 /**
- * 文档行（紧凑列表样式，仿网盘）：左图标 / 右两行——第一行只放标题，
- * 第二行放标签：子类 · 档位（免费/VIP）· 查看人数。
- * 整行可点 → 打开预览（onOpen）。下载动作移到预览界面，列表行不再带按钮。
+ * 文档卡片（统一设计原型终态）：每条文档是一张独立卡片，左侧一条「栏目色条」，
+ * 线性文档图标 + 栏目标签共用同一栏目色，整页克制高级。
+ * 第二行标签：栏目 · 档位（免费/VIP）· 查看人数。整卡可点 → 打开预览（onOpen）。
+ * 颜色按文档所属栏目（subcategory）区分，未知栏目走确定性回落（见 utils/docCategory）。
  */
 export default function DocumentCard({ doc, onOpen }) {
   const vipDoc = doc.requiredTier === 'vip';
-  // 图标按文件类型区分（Word/Excel/PPT/PDF/图片/视频/其它），各带专属图标与配色；
-  // 免费/VIP 档位改由下方文字标签表达，不再压在图标上。
-  // 解构出 Icon 后用大写命名渲染——MUI 的 icon 是 memo 包装组件，
-  // 直接写 `<ft.Icon>` 在 Vite automatic JSX runtime 下渲染时报错（具体原因迷），先解构规避。
-  const ft = fileTypeMeta(doc.attachmentMime, doc.attachmentName);
-  const FileIcon = ft.Icon;
+  const cs = catStyleFor(doc.subcategory);
 
   return (
     <Box
@@ -27,25 +23,24 @@ export default function DocumentCard({ doc, onOpen }) {
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: { xs: 1.5, sm: 1.75 },
-        px: { xs: 1.75, sm: 2.25 },
-        py: { xs: 1.5, sm: 1.75 },
+        gap: { xs: 1.25, sm: 1.5 },
+        px: { xs: 1.5, sm: 1.75 },
+        py: { xs: 1.4, sm: 1.6 },
         cursor: 'pointer',
         outline: 'none',
-        transition: 'background-color .18s',
-        '&:hover': { bgcolor: 'var(--bg-mute)' },
-        '&:focus-visible': { bgcolor: 'var(--bg-mute)' },
+        bgcolor: 'var(--bg-elev)',
+        border: '1px solid var(--line)',
+        borderLeft: `3px solid ${cs.color}`,
+        borderRadius: 'var(--r-md)',
+        boxShadow: 'var(--shadow-sm)',
+        transition: 'box-shadow .18s, transform .18s, border-color .18s',
+        '&:hover': { boxShadow: '0 8px 20px -10px rgba(15,118,110,0.22)', transform: 'translateY(-1px)' },
+        '&:focus-visible': { boxShadow: 'var(--shadow-focus)' },
       }}
     >
-      {/* 图标：按文件类型上色 */}
-      <Box
-        sx={{
-          width: { xs: 42, sm: 46 }, height: { xs: 42, sm: 46 },
-          borderRadius: '12px', bgcolor: ft.bg,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}
-      >
-        <FileIcon titleAccess={ft.label} sx={{ color: ft.fg, fontSize: { xs: 21, sm: 24 } }} />
+      {/* 线性文档图标，栏目色 */}
+      <Box sx={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cs.color }}>
+        <DocLineIcon badge={cs.badge} size={34} color={cs.color} />
       </Box>
 
       {/* 内容区：第一行标题，第二行标签 */}
@@ -57,7 +52,6 @@ export default function DocumentCard({ doc, onOpen }) {
           {doc.title}
         </Typography>
 
-        {/* 标签：子类（小 chip）· 档位 · 查看次数 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 0.6, color: 'var(--ink-3)', fontSize: '0.76rem' }}>
           {doc.subcategory && (
             <Typography
@@ -66,12 +60,13 @@ export default function DocumentCard({ doc, onOpen }) {
                 display: 'inline-block',
                 px: 0.75, py: 0.15,
                 borderRadius: 'var(--r-xs)',
-                bgcolor: 'var(--accent-soft)',
-                color: 'var(--accent-ink)',
+                bgcolor: `${cs.color}1a`,
+                color: cs.color,
                 fontSize: '0.7rem',
                 fontWeight: 700,
                 lineHeight: 1.5,
                 letterSpacing: '0.01em',
+                whiteSpace: 'nowrap',
               }}
             >
               {doc.subcategory}

@@ -41,16 +41,6 @@ function DocSkeleton() {
   )
 }
 
-// 列表外壳：白底圆角 + 细描边 + 柔和投影，行与行之间用细分隔线，整体无空隙（仿网盘紧凑列表）
-const listSurfaceSx = {
-  bgcolor: '#fff',
-  borderRadius: 'var(--r-lg)',
-  border: '1px solid',
-  borderColor: 'divider',
-  overflow: 'hidden',
-  boxShadow: '0 10px 30px -18px rgba(15, 118, 110, 0.16)',
-}
-
 // URL 里的 ?category= 决定当前用户应看到哪一域文档；没传由后端按 cookie 兜底（见 server.js /api/documents）。
 // 入口：ASG100 / ATA100 各自首页跳过来时会显式带参数；老链接 / 收藏的裸 URL 走 cookie 兜底。
 const URL_CATEGORY = (() => {
@@ -118,15 +108,15 @@ export default function App() {
     <Box
       sx={{
         minHeight: '100dvh',
-        background: 'radial-gradient(1100px 520px at 50% -180px, rgba(15,118,110,0.07), transparent 70%)',
+        background: 'radial-gradient(1100px 520px at 50% -180px, rgba(15,118,110,0.07), transparent 70%), radial-gradient(820px 480px at 100% 104%, rgba(176,138,62,0.05), transparent 62%)',
         pt: { xs: 3, md: 5 },
         pb: { xs: 11, md: 12 }, // 给悬浮底部导航留位置
       }}
     >
       <Container maxWidth="md">
         {/* 头部：标题左 + 用户状态条右（VIP chip + 手机号），同一行；space-between 撑开保证标题不被 VIP 遮挡 */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5, minHeight: 32, mb: { xs: 2.5, md: 3.5 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, mb: { xs: 2.5, md: 3.5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', minWidth: 0 }}>
             <IconButton
               aria-label="返回首页"
               size="small"
@@ -134,6 +124,7 @@ export default function App() {
               sx={{
                 ml: -1,
                 mr: 0.25,
+                mt: '3px',
                 p: 0.35,
                 color: 'var(--ink-2)',
                 '&:hover': { color: 'var(--accent)', bgcolor: 'transparent' },
@@ -141,12 +132,19 @@ export default function App() {
             >
               <ArrowBackIosNewIcon sx={{ fontSize: 16 }} />
             </IconButton>
-            <Typography
-              component="h1"
-              sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.25 }}
-            >
-              {titleForCategory(activeCategory)}
-            </Typography>
+            {/* 统一页眉签名：小标签 + 大标题 + 青绿渐变下划线 */}
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--accent)', mb: 0.5 }}>
+                {activeCategory === '人才ATA' ? '人才 ATA' : '安防 ASG'}
+              </Box>
+              <Typography
+                component="h1"
+                sx={{ fontSize: { xs: '1.3rem', md: '1.55rem' }, fontWeight: 800, letterSpacing: '-0.012em', color: 'var(--ink)', lineHeight: 1.2 }}
+              >
+                {titleForCategory(activeCategory)}
+              </Typography>
+              <Box aria-hidden sx={{ width: 120, maxWidth: '70%', height: '3px', mt: 1, borderRadius: '3px', background: 'linear-gradient(90deg, var(--accent) 0%, #24aaa0 52%, transparent 100%)', boxShadow: '0 1px 6px -1px rgba(15,118,110,0.4)' }} />
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
             {meReady && me ? (
@@ -215,9 +213,9 @@ export default function App() {
 
         {/* 文档列表 / 骨架 / 空状态 */}
         {loading ? (
-          <Box sx={listSurfaceSx}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
             {[0, 1, 2, 3].map((i) => (
-              <Box key={i} sx={{ borderTop: i === 0 ? 'none' : '1px solid', borderColor: 'var(--line)' }}>
+              <Box key={i} sx={{ bgcolor: 'var(--bg-elev)', border: '1px solid var(--line)', borderLeft: '3px solid var(--line-strong)', borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-sm)' }}>
                 <DocSkeleton />
               </Box>
             ))}
@@ -231,13 +229,11 @@ export default function App() {
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>换个关键词，或点上方「全部」看看所有文档</Typography>
           </Box>
         ) : (
-          <Box sx={listSurfaceSx}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 } }}>
             {items.map((doc, i) => (
               <Box
                 key={doc.id}
                 sx={{
-                  borderTop: i === 0 ? 'none' : '1px solid',
-                  borderColor: 'var(--line)',
                   animation: 'docFadeUp .5s cubic-bezier(0.16,1,0.3,1) both',
                   animationDelay: `${Math.min(i, 8) * 55}ms`,
                 }}
